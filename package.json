@@ -1,0 +1,19 @@
+{
+  "name": "data-track",
+  "private": true,
+  "packageManager": "pnpm@11.1.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "simulate": "pnpm --filter @data-track/api exec tsx ../../scripts/simulate-device.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.10",
+    "typescript": "^5.7.0"
+  }
+}
