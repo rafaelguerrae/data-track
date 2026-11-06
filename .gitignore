@@ -5,3 +5,7 @@ dist
 .env
 *.log
 *.tsbuildinfo
+
+infra/mosquitto/passwords
+infra/mosquitto/acl
+.env.prod

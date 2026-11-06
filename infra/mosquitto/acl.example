@@ -1,0 +1,6 @@
+# Copie para infra/mosquitto/acl. Dispositivos só publicam; a API só lê.
+user device
+topic write data-track/#
+
+user api
+topic read data-track/#

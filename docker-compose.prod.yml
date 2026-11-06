@@ -1,0 +1,79 @@
+# Produção (VPS). Uso: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      MQTT_DOMAIN: ${MQTT_DOMAIN}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_PORT: 3001
+      DATABASE_URL: postgres://datatrack:${POSTGRES_PASSWORD}@timescaledb:5432/datatrack
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: api
+      MQTT_PASSWORD: ${MQTT_API_PASSWORD}
+      MQTT_TOPIC_ROOT: data-track
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      CORS_ORIGIN: ${WEB_ORIGIN}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: datatrack
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: datatrack
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datatrack"]
+      interval: 5s
+      retries: 10
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    # Começa como root para ler a chave do certificado; o Mosquitto rebaixa o usuário depois.
+    user: root
+    ports:
+      - "8883:8883"
+    environment:
+      MQTT_DOMAIN: ${MQTT_DOMAIN}
+    command:
+      - sh
+      - -c
+      - sed "s/__MQTT_DOMAIN__/$$MQTT_DOMAIN/g" /mosquitto/config/mosquitto.prod.conf > /tmp/mosquitto.conf && exec mosquitto -c /tmp/mosquitto.conf
+    volumes:
+      - ./infra/mosquitto/mosquitto.prod.conf:/mosquitto/config/mosquitto.prod.conf:ro
+      - ./infra/mosquitto/passwords:/mosquitto/config/passwords:ro
+      - ./infra/mosquitto/acl:/mosquitto/config/acl:ro
+      - caddy-data:/certs:ro
+      - mosquitto-data:/mosquitto/data
+
+volumes:
+  caddy-data:
+  pg-data:
+  mosquitto-data:

@@ -14,4 +14,4 @@ pnpm simulate                            # leituras falsas, sem o hardware
 pnpm build | typecheck | test            # verificações
 ```
 
-Mais detalhes em [docs/](docs/): [arquitetura](docs/arquitetura.md) e [desenvolvimento](docs/desenvolvimento.md).
+Mais detalhes em [docs/](docs/): [arquitetura](docs/arquitetura.md), [desenvolvimento](docs/desenvolvimento.md) e [deploy](docs/deploy.md).

@@ -9,7 +9,7 @@ Monorepo Turborepo + pnpm, tudo em TypeScript. Recebe leituras de temperatura (E
 - `packages/shared`: schemas zod, parser de tópicos e DTOs usados por api e web (precisa de `pnpm build` para gerar `dist/`)
 - `infra/mosquitto`: config do broker; `docker-compose.yml`: mosquitto, timescaledb, mailpit
 - `scripts/simulate-device.ts`: simula o firmware
-- `docs/`: arquitetura e guia de desenvolvimento
+- `docs/`: arquitetura, desenvolvimento e deploy (`docker-compose.prod.yml`, `apps/api/Dockerfile`, `infra/caddy`, `.env.prod.example`)
 
 ## Comandos
 
