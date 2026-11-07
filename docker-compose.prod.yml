@@ -7,8 +7,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      API_DOMAIN: ${API_DOMAIN}
-      MQTT_DOMAIN: ${MQTT_DOMAIN}
+      DOMAIN: ${DOMAIN}
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -61,11 +60,11 @@ services:
     ports:
       - "8883:8883"
     environment:
-      MQTT_DOMAIN: ${MQTT_DOMAIN}
+      DOMAIN: ${DOMAIN}
     command:
       - sh
       - -c
-      - sed "s/__MQTT_DOMAIN__/$$MQTT_DOMAIN/g" /mosquitto/config/mosquitto.prod.conf > /tmp/mosquitto.conf && exec mosquitto -c /tmp/mosquitto.conf
+      - sed "s/__DOMAIN__/$$DOMAIN/g" /mosquitto/config/mosquitto.prod.conf > /tmp/mosquitto.conf && exec mosquitto -c /tmp/mosquitto.conf
     volumes:
       - ./infra/mosquitto/mosquitto.prod.conf:/mosquitto/config/mosquitto.prod.conf:ro
       - ./infra/mosquitto/passwords:/mosquitto/config/passwords:ro

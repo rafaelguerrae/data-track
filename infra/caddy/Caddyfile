@@ -1,9 +1,5 @@
-# HTTPS automático (Let's Encrypt). Variáveis vêm do .env.prod.
-{$API_DOMAIN} {
+# HTTPS automático (Let's Encrypt). O domínio vem do .env.prod.
+# O mesmo certificado é reutilizado pelo Mosquitto (TLS na 8883).
+{$DOMAIN} {
 	reverse_proxy api:3001
-}
-
-# Só para o Caddy emitir/renovar o certificado usado pelo Mosquitto (TLS na 8883).
-{$MQTT_DOMAIN} {
-	respond 404
 }
