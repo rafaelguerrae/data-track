@@ -45,6 +45,9 @@ services:
       POSTGRES_USER: datatrack
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: datatrack
+    # Só no loopback da VPS: acesso por túnel SSH (ssh -L), nunca exposto à internet.
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:

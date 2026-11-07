@@ -13,13 +13,13 @@ Navegador ──▶ Vercel (web) ──HTTPS :443──▶ Caddy ──▶ api
 - **API na VPS, não na Vercel.** A API mantém uma conexão MQTT permanente (assinante), e a Vercel só executa funções sob demanda. O Mosquitto também precisa de uma porta TCP pública. Só o frontend roda na Vercel; use o projeto `apps/web` isolado, **sem** o import multi-serviço (Services).
 - **Um hostname só.** API (443) e MQTT (8883) usam portas diferentes, então `data-track.duckdns.org` atende os dois, e o Caddy emite o certificado que o Mosquitto reutiliza.
 - **DuckDNS em vez de comprar domínio.** O Let's Encrypt emite certificado para o subdomínio, e a Vercel só aceita chamar uma API com HTTPS válido.
-- **VPS pequena basta.** 1 vCPU, 2 GB de RAM e 50 GB de disco dão conta (uso estimado ~1 GB de RAM). O ponto mais pesado é o build da imagem da API; se faltar memória, crie 2 GB de swap na VPS.
+- **VPS pequena basta.** 1 vCPU, 2 GB de RAM e 24 GB de disco dão conta (uso estimado ~1 GB de RAM). O ponto mais pesado é o build da imagem da API; crie 2 GB de swap na VPS antes do primeiro build (passo 2).
 
 ## Pré-requisitos
 
-- VPS Serverspace com Ubuntu 24.04 (ou Debian) e acesso root, **sem** cPanel. Portas **80, 443 e 8883** liberadas no firewall do painel e na própria VPS.
+- VPS Serverspace com Ubuntu 24.04 ou superior (testado no 26.04) ou Debian e acesso root, **sem** cPanel. Portas **80, 443 e 8883** liberadas no firewall do painel e na própria VPS.
 - Subdomínio `data-track.duckdns.org` apontando para a VPS (passo 1).
-- Provedor SMTP real (Resend, Brevo, SES) para os alertas. O Mailpit só serve em desenvolvimento.
+- Provedor SMTP real para os alertas (usamos o Resend). O Mailpit só serve em desenvolvimento.
 
 ## 1. DuckDNS
 
@@ -31,41 +31,119 @@ Em https://www.duckdns.org/domains, no domínio `data-track`, preencha o campo *
 
 ## 2. VPS
 
-Instale o Docker (https://docs.docker.com/engine/install/ubuntu/) e libere as portas:
+### Acesso SSH
+
+Crie uma chave só para este servidor e instale a pública na VPS (no painel da Serverspace ou com `ssh-copy-id`):
 
 ```bash
-sudo ufw allow 22 && sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw allow 8883 && sudo ufw enable
+ssh-keygen -t ed25519 -a 100 -C "data-track-vps" -f ~/.ssh/id_data_track
+ssh-copy-id -i ~/.ssh/id_data_track.pub root@<IP_DA_VPS>
 ```
 
-Baixe o código e configure:
+Crie o usuário `deploy` (sudo sem senha, só chave) e teste o login **antes** de desativar o root:
+
+```bash
+adduser --disabled-password --gecos "" deploy && usermod -aG sudo deploy
+echo "deploy ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-deploy && chmod 440 /etc/sudoers.d/90-deploy
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+install -m 600 -o deploy -g deploy /root/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys
+```
+
+Alias em `~/.ssh/config` (máquina local):
+
+```
+Host data-track
+    HostName <IP_DA_VPS>
+    User deploy
+    IdentityFile ~/.ssh/id_data_track
+    IdentitiesOnly yes
+```
+
+Com `ssh data-track` funcionando, desative root e senha. O arquivo precisa começar com `00-`: o `sshd` usa o **primeiro** valor encontrado e o `50-cloud-init.conf` da imagem ativa `PasswordAuthentication yes`.
+
+```bash
+printf 'PermitRootLogin no\nPasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/00-hardening.conf
+sudo sshd -t && sudo systemctl reload ssh
+sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"   # ambos devem ser "no"
+```
+
+### Firewall, swap e Docker
+
+```bash
+sudo apt-get update && sudo apt-get install -y ufw fail2ban ca-certificates curl
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 8883/tcp
+sudo ufw enable        # libere a 22 ANTES, senão você perde o acesso
+
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+```
+
+Instale o Docker pelo repositório oficial (https://docs.docker.com/engine/install/ubuntu/; o Ubuntu 26.04 `resolute` é suportado) e adicione o usuário ao grupo: `sudo usermod -aG docker deploy` (reconecte em seguida). Esse grupo equivale a root na máquina.
+
+### Código e segredos
 
 ```bash
 git clone <repo> data-track && cd data-track
-cp .env.prod.example .env.prod      # troque as senhas e preencha o SMTP
+cp .env.prod.example .env.prod && chmod 600 .env.prod
 ```
 
-Crie os usuários do broker (`device` para o ESP32, `api` para a API) e o ACL:
+Gere as senhas com `openssl rand -hex 24` e preencha o `.env.prod` (`POSTGRES_PASSWORD`, `MQTT_API_PASSWORD`, `SMTP_PASS`, `WEB_ORIGIN` sem barra no final). Não cole chaves em chats nem commits.
+
+**SMTP (Resend):** `SMTP_HOST=smtp.resend.com`, porta `587`, usuário `resend`, senha = API key. O Resend não aceita remetente `gmail.com`/`outlook.com`: sem domínio próprio verificado, use `MAIL_FROM=onboarding@resend.dev`, que só entrega para o e-mail da conta Resend. O `duckdns.org` não serve para verificar domínio (você não controla o DNS dele).
+
+Crie os usuários do broker (`device` para o ESP32, `api` para a API) e o ACL. O arquivo de senhas e o ACL precisam ser do usuário `mosquitto` (uid 1883), senão o broker não consegue abri-los:
 
 ```bash
 cp infra/mosquitto/acl.example infra/mosquitto/acl
 docker run --rm -v "$PWD/infra/mosquitto:/c" eclipse-mosquitto:2 mosquitto_passwd -c -b /c/passwords api '<MQTT_API_PASSWORD do .env.prod>'
 docker run --rm -v "$PWD/infra/mosquitto:/c" eclipse-mosquitto:2 mosquitto_passwd -b /c/passwords device '<senha-do-esp32>'
+sudo chown 1883:1883 infra/mosquitto/passwords infra/mosquitto/acl && sudo chmod 600 infra/mosquitto/passwords infra/mosquitto/acl
 ```
 
-Suba tudo (a API aplica as migrations ao iniciar):
+Guarde a senha do ESP32 num arquivo seguro (`chmod 600`) para colocar no firmware.
+
+### Subir
+
+A API aplica as migrations ao iniciar:
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 curl https://data-track.duckdns.org/health
 ```
 
-O Caddy emite o certificado de `data-track.duckdns.org` e o Mosquitto o reutiliza. Se o Mosquitto subir antes do certificado existir, reinicie-o depois: `docker compose -f docker-compose.prod.yml --env-file .env.prod restart mosquitto`. Os certificados renovam a cada ~60 dias; agende esse restart mensalmente (cron).
+O Caddy emite o certificado de `data-track.duckdns.org` e o Mosquitto o reutiliza. O volume do Caddy guarda o certificado em `caddy/certificates/...`, e o Mosquitto roda com `user root` no `mosquitto.prod.conf` porque o certificado só é legível por root. Se o Mosquitto subir antes do certificado existir, reinicie-o: `docker compose -f docker-compose.prod.yml --env-file .env.prod restart mosquitto`.
+
+### Renovação do certificado (cron)
+
+O Caddy renova a cada ~60 dias, mas o Mosquitto só relê o certificado ao reiniciar. Agende um restart mensal (`crontab -e` como `deploy`):
+
+```
+0 4 1 * * cd /home/deploy/data-track && docker compose -f docker-compose.prod.yml --env-file .env.prod restart mosquitto >> /home/deploy/mosquitto-restart.log 2>&1
+```
+
+### Acesso ao banco (DBeaver)
+
+O TimescaleDB só escuta no loopback da VPS (`127.0.0.1:5432`), nunca na internet. Acesse por túnel SSH.
+
+No DBeaver: nova conexão **PostgreSQL** → Host `localhost`, porta `5432`, banco `datatrack`, usuário `datatrack`, senha = `POSTGRES_PASSWORD` do `.env.prod` da VPS. Na aba **SSH**, marque *Use SSH Tunnel*: host `<IP_DA_VPS>`, porta `22`, usuário `deploy`, *Authentication Method* = *Public Key* com a chave `~/.ssh/id_data_track`.
+
+Alternativa pelo terminal (o DBeaver então conecta em `localhost:5432` sem a aba SSH):
+
+```bash
+ssh -N -L 5432:localhost:5432 data-track
+```
+
+Um shell SQL direto, sem túnel nem senha:
+
+```bash
+ssh -t data-track 'cd data-track && docker compose -f docker-compose.prod.yml --env-file .env.prod exec timescaledb psql -U datatrack datatrack'
+```
 
 ## 3. Vercel (frontend)
 
 1. Importe o repositório como projeto **único** com **Root Directory** `apps/web` e habilite "Include source files outside of the Root Directory" (o app depende de `packages/shared`). Ignore a sugestão de multi-serviço.
 2. Variável de ambiente: `NEXT_PUBLIC_API_URL=https://data-track.duckdns.org`.
-3. Faça o deploy e coloque a URL final em `WEB_ORIGIN` no `.env.prod` da VPS (CORS), depois rode o `up -d` de novo.
+3. Faça o deploy e coloque a URL final em `WEB_ORIGIN` no `.env.prod` da VPS (CORS), depois rode o `up -d` de novo (sem barra no final da URL).
 
 ## 4. Firmware (ESP32)
 
@@ -86,4 +164,4 @@ curl https://data-track.duckdns.org/devices
 
 - O dashboard não tem login: qualquer pessoa com a URL vê os dados e cria regras.
 - Sem backup automático do banco (volume `pg-data`).
-- Reiniciar o Mosquitto após cada renovação do certificado.
+- O restart do Mosquitto que recarrega o certificado é mensal (cron): uma renovação logo após o restart só é carregada no mês seguinte, ainda dentro da validade de 90 dias.
