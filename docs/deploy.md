@@ -4,13 +4,14 @@ Frontend na **Vercel**; API, banco, broker MQTT e proxy HTTPS em **uma VPS** (Se
 
 ```
 ESP32 ──MQTT/TLS :8883──▶ Mosquitto ──▶ api ──▶ TimescaleDB
-Navegador ──▶ Vercel (web) ──HTTPS :443──▶ Caddy ──▶ api
+Navegador ──▶ Vercel (web) ──/api/* reescrito──▶ Caddy :443 ──▶ api
                   ambos usam data-track.duckdns.org
 ```
 
 ## Decisões
 
 - **API na VPS, não na Vercel.** A API mantém uma conexão MQTT permanente (assinante), e a Vercel só executa funções sob demanda. O Mosquitto também precisa de uma porta TCP pública. Só o frontend roda na Vercel; use o projeto `apps/web` isolado, **sem** o import multi-serviço (Services).
+- **Cookie first-party via proxy.** O navegador só fala com a Vercel: `/api/*` é reescrito (`rewrites` do Next) para a API. Assim o cookie de sessão (`dt_session`, HttpOnly) pertence ao domínio da web e não depende de cookies de terceiros, já que web e `duckdns.org` são sites diferentes. Não há CORS no caminho do navegador.
 - **Um hostname só.** API (443) e MQTT (8883) usam portas diferentes, então `data-track.duckdns.org` atende os dois, e o Caddy emite o certificado que o Mosquitto reutiliza.
 - **DuckDNS em vez de comprar domínio.** O Let's Encrypt emite certificado para o subdomínio, e a Vercel só aceita chamar uma API com HTTPS válido.
 - **VPS pequena basta.** 1 vCPU, 2 GB de RAM e 24 GB de disco dão conta (uso estimado ~1 GB de RAM). O ponto mais pesado é o build da imagem da API; crie 2 GB de swap na VPS antes do primeiro build (passo 2).
@@ -142,8 +143,19 @@ ssh -t data-track 'cd data-track && docker compose -f docker-compose.prod.yml --
 ## 3. Vercel (frontend)
 
 1. Importe o repositório como projeto **único** com **Root Directory** `apps/web` e habilite "Include source files outside of the Root Directory" (o app depende de `packages/shared`). Ignore a sugestão de multi-serviço.
-2. Variável de ambiente: `NEXT_PUBLIC_API_URL=https://data-track.duckdns.org`.
-3. Faça o deploy e coloque a URL final em `WEB_ORIGIN` no `.env.prod` da VPS (CORS), depois rode o `up -d` de novo (sem barra no final da URL).
+2. Variável de ambiente (só no servidor): `API_URL=https://data-track.duckdns.org`. Ela alimenta o rewrite de `/api/*`.
+3. Faça o deploy e coloque a URL final em `WEB_ORIGIN` no `.env.prod` da VPS, depois rode o `up -d` de novo (sem barra no final da URL). Ela vira o `WEB_URL` dos links de convite e o `CORS_ORIGIN`.
+
+### Primeiro administrador
+
+O cadastro é só por convite, então crie o primeiro admin (e a equipe) na VPS. A senha vem de `ADMIN_PASSWORD` ou de um prompt:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm -e ADMIN_PASSWORD='<senha>' api \
+  node dist/scripts/create-admin.js --email voce@exemplo.com --name "Seu Nome" --team "Nome da Equipe"
+```
+
+Dados anteriores à autenticação (sensores e regras) são migrados para uma equipe chamada **Padrão**. Para herdá-los, use `--team "Padrão"`. Depois, no app, a página **Equipe** convida os demais usuários e vincula sensores pelo ID.
 
 ## 4. Firmware (ESP32)
 
@@ -162,6 +174,7 @@ curl https://data-track.duckdns.org/devices
 
 ## Pendências conhecidas
 
-- O dashboard não tem login: qualquer pessoa com a URL vê os dados e cria regras.
+- Sem recuperação de senha nem troca de senha pelo app: um admin remove o usuário e convida de novo.
+- Sensores continuam criados por qualquer mensagem MQTT autenticada com a senha `device`; a equipe só os vê depois de vinculá-los pelo ID.
 - Sem backup automático do banco (volume `pg-data`).
 - O restart do Mosquitto que recarrega o certificado é mensal (cron): uma renovação logo após o restart só é carregada no mês seguinte, ainda dentro da validade de 90 dias.

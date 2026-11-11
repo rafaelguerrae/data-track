@@ -32,6 +32,9 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       MAIL_FROM: ${MAIL_FROM}
       CORS_ORIGIN: ${WEB_ORIGIN}
+      WEB_URL: ${WEB_ORIGIN}
+      SESSION_TTL_DAYS: 14
+      COOKIE_SECURE: "true"
     depends_on:
       timescaledb:
         condition: service_healthy

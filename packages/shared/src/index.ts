@@ -42,6 +42,20 @@ export const alertRuleInputSchema = z.object({
 });
 export type AlertRuleInput = z.infer<typeof alertRuleInputSchema>;
 
+/** Atualização parcial de uma regra (o sensor não muda). */
+export const alertRuleUpdateSchema = z
+  .object({
+    kind: alertKindSchema,
+    threshold: z.number().nullable(),
+    cooldownMin: z.number().int().min(1),
+    email: z.string().email(),
+    enabled: z.boolean(),
+  })
+  .partial();
+export type AlertRuleUpdate = z.infer<typeof alertRuleUpdateSchema>;
+
+export const ALERT_PAGE_SIZE = 30;
+
 export const bucketSchema = z.enum(["1m", "5m", "15m", "1h", "1d"]);
 export type Bucket = z.infer<typeof bucketSchema>;
 export const BUCKET_INTERVAL: Record<Bucket, string> = {
@@ -76,4 +90,73 @@ export interface AlertEventDto {
   kind: AlertKind;
   message: string;
   createdAt: string;
+}
+
+// --- Autenticação e equipes ---
+
+export const roleSchema = z.enum(["admin", "member"]);
+export type Role = z.infer<typeof roleSchema>;
+
+export const loginInputSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+export type LoginInput = z.infer<typeof loginInputSchema>;
+
+export const acceptInviteInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  password: z.string().min(8).max(200),
+});
+export type AcceptInviteInput = z.infer<typeof acceptInviteInputSchema>;
+
+export const inviteInputSchema = z.object({
+  email: z.string().email(),
+  role: roleSchema.default("member"),
+});
+export type InviteInput = z.infer<typeof inviteInputSchema>;
+
+export const claimDeviceInputSchema = z.object({
+  deviceId: z.string().trim().min(1).max(100),
+  name: z.string().trim().max(80).optional(),
+});
+export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
+
+/** Nome vazio limpa o nome (o sensor volta a aparecer pelo ID). */
+export const updateDeviceInputSchema = z.object({ name: z.string().trim().max(80) });
+export type UpdateDeviceInput = z.infer<typeof updateDeviceInputSchema>;
+
+export const updateTeamInputSchema = z.object({ name: z.string().trim().min(1).max(80) });
+export type UpdateTeamInput = z.infer<typeof updateTeamInputSchema>;
+
+export interface TeamDto {
+  id: string;
+  name: string;
+}
+export interface UserDto {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  team: TeamDto;
+}
+export interface MemberDto {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+}
+export interface InviteDto {
+  id: string;
+  email: string;
+  role: Role;
+  expiresAt: string;
+}
+export interface InvitePreviewDto {
+  email: string;
+  teamName: string;
+}
+export interface TeamDetailDto {
+  team: TeamDto;
+  members: MemberDto[];
+  invites: InviteDto[];
 }

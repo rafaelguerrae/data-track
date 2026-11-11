@@ -1,21 +1,29 @@
 "use client";
 import type { SeriesPoint } from "@data-track/shared";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
+const TICK = { fill: "var(--muted)", fontSize: 12 };
 
 export function TempChart({ data }: { data: SeriesPoint[] }) {
-  const rows = data.map((p) => ({ ...p, label: new Date(p.time).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) }));
+  const rows = data.map((p) => ({
+    ...p,
+    band: [p.min, p.max] as [number, number],
+    label: new Date(p.time).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }),
+  }));
   return (
     <div className="h-80 w-full">
       <ResponsiveContainer>
-        <LineChart data={rows}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="label" minTickGap={40} />
-          <YAxis unit="°" domain={["auto", "auto"]} />
-          <Tooltip formatter={(v) => `${Number(v).toFixed(2)} °C`} />
-          <Line type="monotone" dataKey="max" stroke="#fca5a5" dot={false} name="máx" />
-          <Line type="monotone" dataKey="avg" stroke="#2563eb" dot={false} strokeWidth={2} name="média" />
-          <Line type="monotone" dataKey="min" stroke="#93c5fd" dot={false} name="mín" />
-        </LineChart>
+        <ComposedChart data={rows}>
+          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" minTickGap={48} tick={TICK} stroke="var(--line)" />
+          <YAxis unit="°" domain={["auto", "auto"]} tick={TICK} stroke="var(--line)" width={48} />
+          <Tooltip
+            contentStyle={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, color: "var(--ink)" }}
+            formatter={(v, name) => (name === "faixa" ? [`${(v as number[])[0]!.toFixed(2)} – ${(v as number[])[1]!.toFixed(2)} °C`, "mín – máx"] : [`${Number(v).toFixed(2)} °C`, "média"])}
+          />
+          <Area dataKey="band" name="faixa" stroke="none" fill="var(--chart-range)" fillOpacity={0.22} isAnimationActive={false} />
+          <Line type="monotone" dataKey="avg" name="média" stroke="var(--chart-avg)" strokeWidth={2} dot={false} isAnimationActive={false} />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

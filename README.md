@@ -11,7 +11,7 @@ pnpm infra:up                            # mosquitto, timescaledb, mailpit
 pnpm --filter @data-track/api db:migrate
 pnpm dev                                 # api + web
 pnpm simulate                            # leituras falsas, sem o hardware
-pnpm build | typecheck | test            # verificações
+pnpm build | typecheck                  # verificações
 ```
 
 Mais detalhes em [docs/](docs/): [arquitetura](docs/arquitetura.md), [desenvolvimento](docs/desenvolvimento.md) e [deploy](docs/deploy.md).

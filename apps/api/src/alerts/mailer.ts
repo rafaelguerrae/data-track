@@ -8,6 +8,8 @@ const transport = nodemailer.createTransport({
   auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
 });
 
-export async function sendAlertEmail(to: string, subject: string, text: string) {
+export async function sendEmail(to: string, subject: string, text: string) {
   await transport.sendMail({ from: env.MAIL_FROM, to, subject, text });
 }
+
+export const sendAlertEmail = sendEmail;

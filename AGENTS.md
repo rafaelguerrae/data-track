@@ -4,8 +4,8 @@ Monorepo Turborepo + pnpm, tudo em TypeScript. Recebe leituras de temperatura (E
 
 ## Estrutura
 
-- `apps/api`: Fastify. Assina o MQTT, grava leituras, avalia alertas, expõe REST (porta 3001)
-- `apps/web`: Next.js (App Router) + Tailwind. Dashboard e tela de alertas (porta 3000)
+- `apps/api`: Fastify. Assina o MQTT, grava leituras, avalia alertas, autentica usuários/equipes e expõe REST (porta 3001)
+- `apps/web`: Next.js (App Router) + Tailwind. Login (root `/`), dashboard, alertas e equipe (porta 3000)
 - `packages/shared`: schemas zod, parser de tópicos e DTOs usados por api e web (precisa de `pnpm build` para gerar `dist/`)
 - `infra/mosquitto`: config do broker; `docker-compose.yml`: mosquitto, timescaledb, mailpit
 - `scripts/simulate-device.ts`: simula o firmware
@@ -18,7 +18,8 @@ pnpm infra:up                            # sobe mosquitto, timescaledb e mailpit
 pnpm --filter @data-track/api db:migrate # aplica as migrations
 pnpm dev                                 # api + web
 pnpm simulate                            # leituras falsas
-pnpm build && pnpm typecheck && pnpm test
+pnpm seed --team "Nome"                  # sensores e histórico sintéticos (só banco local)
+pnpm build && pnpm typecheck
 pnpm --filter @data-track/api db:generate  # gera migration após mudar src/db/schema.ts
 ```
 
@@ -35,6 +36,9 @@ pnpm --filter @data-track/api db:generate  # gera migration após mudar src/db/s
 - Contrato MQTT (definido pelo firmware): `data-track/<device>/temperature` (JSON `{"temp_c","ts"}`), `.../status` (`online`/`offline`, retido, LWT) e `.../fault` (ex. `0x04`). A API assina `data-track/+/temperature/#`. O parser fica em `packages/shared/src/index.ts`.
 - O `ts` do firmware é uptime em ms, não horário real: a API carimba o horário de chegada.
 - `readings` é uma hypertable do TimescaleDB, criada na migration `0001_hypertable.sql` (SQL manual). Consultas de série usam `time_bucket`.
-- Funções puras de alerta ficam em `apps/api/src/alerts/rules.ts` (testáveis sem env/banco); `engine.ts` faz o I/O.
+- Funções puras de alerta ficam em `apps/api/src/alerts/rules.ts` (sem env/banco); `engine.ts` faz o I/O.
 - Variáveis de ambiente validadas com zod em `apps/api/src/env.ts`; modelo em `.env.example`.
-- Mosquitto de dev é anônimo e sem TLS, e não há login no dashboard (ver `docs/desenvolvimento.md`).
+- Mosquitto de dev é anônimo e sem TLS (ver `docs/desenvolvimento.md`).
+- Auth: cadastro só por convite; primeiro admin via `pnpm --filter @data-track/api create-admin`. Sessão em cookie `dt_session` (hash em `sessions`). Toda rota de dados passa por `requireAuth` (`apps/api/src/auth/session.ts`) e filtra por `team_id`; sensor de outra equipe responde 404. Senha/tokens puros ficam em `apps/api/src/auth/{password,tokens}.ts`.
+- O browser nunca chama a API direto: `apps/web` reescreve `/api/*` para `API_URL` (`next.config.ts`), e `proxy.ts` só checa a presença do cookie. `fetch` sem corpo não pode mandar `content-type: application/json` (o Fastify responde 400).
+- Tema do web: tokens CSS em `apps/web/app/globals.css` (`bg`, `surface`, `ink`, `accent`...), claro/escuro automático; use as classes semânticas (`bg-surface`, `text-muted`) e os componentes de `src/components/ui/`.
