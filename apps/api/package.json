@@ -11,7 +11,8 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
-    "create-admin": "tsx --env-file=../../.env src/scripts/create-admin.ts"
+    "create-admin": "tsx --env-file=../../.env src/scripts/create-admin.ts",
+    "seed": "tsx --env-file=../../.env src/scripts/seed-readings.ts"
   },
   "dependencies": {
     "@data-track/shared": "workspace:*",

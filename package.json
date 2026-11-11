@@ -9,7 +9,8 @@
     "typecheck": "turbo run typecheck",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
-    "simulate": "pnpm --filter @data-track/api exec tsx ../../scripts/simulate-device.ts"
+    "simulate": "pnpm --filter @data-track/api exec tsx ../../scripts/simulate-device.ts",
+    "seed": "pnpm --filter @data-track/api seed"
   },
   "devDependencies": {
     "turbo": "^2.11.10",

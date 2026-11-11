@@ -18,6 +18,7 @@ pnpm infra:up                            # sobe mosquitto, timescaledb e mailpit
 pnpm --filter @data-track/api db:migrate # aplica as migrations
 pnpm dev                                 # api + web
 pnpm simulate                            # leituras falsas
+pnpm seed --team "Nome"                  # sensores e histórico sintéticos (só banco local)
 pnpm build && pnpm typecheck
 pnpm --filter @data-track/api db:generate  # gera migration após mudar src/db/schema.ts
 ```
