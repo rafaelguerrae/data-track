@@ -39,7 +39,7 @@ export default function LoginPage() {
         </div>
         <Card className="space-y-4 p-6 shadow-sm">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Entrar</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Acesso</h1>
           </div>
           <form onSubmit={submit} className="space-y-4">
             <Field label="E-mail">

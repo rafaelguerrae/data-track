@@ -7,7 +7,8 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: "Data Track",
+  // Cada rota define só o próprio nome; o template acrescenta o sufixo ("Dashboard - Data Track").
+  title: { default: "Data Track", template: "%s - Data Track" },
   icons: { apple: "/data-track-simple-logo.png" },
 };
 
