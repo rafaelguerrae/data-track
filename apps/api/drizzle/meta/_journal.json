@@ -15,6 +15,13 @@
       "when": 1793914674469,
       "tag": "0001_hypertable",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794352505648,
+      "tag": "0002_loud_moondragon",
+      "breakpoints": true
     }
   ]
 }

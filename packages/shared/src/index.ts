@@ -77,3 +77,65 @@ export interface AlertEventDto {
   message: string;
   createdAt: string;
 }
+
+// --- Autenticação e equipes ---
+
+export const roleSchema = z.enum(["admin", "member"]);
+export type Role = z.infer<typeof roleSchema>;
+
+export const loginInputSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+export type LoginInput = z.infer<typeof loginInputSchema>;
+
+export const acceptInviteInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  password: z.string().min(8).max(200),
+});
+export type AcceptInviteInput = z.infer<typeof acceptInviteInputSchema>;
+
+export const inviteInputSchema = z.object({
+  email: z.string().email(),
+  role: roleSchema.default("member"),
+});
+export type InviteInput = z.infer<typeof inviteInputSchema>;
+
+export const claimDeviceInputSchema = z.object({
+  deviceId: z.string().trim().min(1).max(100),
+  name: z.string().trim().max(80).optional(),
+});
+export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
+
+export interface TeamDto {
+  id: string;
+  name: string;
+}
+export interface UserDto {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  team: TeamDto;
+}
+export interface MemberDto {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+}
+export interface InviteDto {
+  id: string;
+  email: string;
+  role: Role;
+  expiresAt: string;
+}
+export interface InvitePreviewDto {
+  email: string;
+  teamName: string;
+}
+export interface TeamDetailDto {
+  team: TeamDto;
+  members: MemberDto[];
+  invites: InviteDto[];
+}

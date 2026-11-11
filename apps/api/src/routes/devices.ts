@@ -1,16 +1,30 @@
 import { BUCKET_INTERVAL, bucketSchema, type DeviceDto, type SeriesPoint } from "@data-track/shared";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { requireAuth } from "#auth/session";
 import { db } from "#db/client";
 import { devices, faults, readings } from "#db/schema";
 
 export async function deviceRoutes(app: FastifyInstance) {
   const r = app.withTypeProvider<ZodTypeProvider>();
+  app.addHook("preHandler", requireAuth);
 
-  r.get("/devices", async (): Promise<DeviceDto[]> => {
-    const rows = await db.select().from(devices).orderBy(devices.id);
+  // Sensores de outra equipe (ou sem equipe) respondem 404, como se não existissem.
+  app.addHook("preHandler", async (req, reply) => {
+    const id = (req.params as { id?: string } | undefined)?.id;
+    if (!id) return;
+    const [d] = await db
+      .select({ id: devices.id })
+      .from(devices)
+      .where(and(eq(devices.id, id), eq(devices.teamId, req.auth!.teamId)))
+      .limit(1);
+    if (!d) return reply.code(404).send({ error: "device not found" });
+  });
+
+  r.get("/devices", async (req): Promise<DeviceDto[]> => {
+    const rows = await db.select().from(devices).where(eq(devices.teamId, req.auth!.teamId)).orderBy(devices.id);
     return Promise.all(
       rows.map(async (d) => {
         const [last] = await db
