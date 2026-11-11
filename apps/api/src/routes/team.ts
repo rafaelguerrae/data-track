@@ -1,6 +1,7 @@
 import {
   claimDeviceInputSchema,
   inviteInputSchema,
+  updateDeviceInputSchema,
   type InviteDto,
   type MemberDto,
   type Role,
@@ -132,6 +133,19 @@ export async function teamRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "device not found or already claimed" });
     return reply.code(201).send({ id: row.id });
   });
+
+  r.patch(
+    "/team/devices/:id",
+    { preHandler: requireAdmin, schema: { params: z.object({ id: z.string() }), body: updateDeviceInputSchema } },
+    async (req, reply) => {
+      const [row] = await db
+        .update(devices)
+        .set({ name: req.body.name || null })
+        .where(and(eq(devices.id, req.params.id), eq(devices.teamId, req.auth!.teamId)))
+        .returning({ id: devices.id, name: devices.name });
+      return row ?? reply.code(404).send({ error: "not found" });
+    },
+  );
 
   r.delete(
     "/team/devices/:id",

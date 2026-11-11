@@ -51,6 +51,8 @@ export const useDeleteInvite = () => useInvalidating((id: string) => api.deleteI
 export const useRemoveMember = () => useInvalidating((id: string) => api.removeMember(id), [keys.team]);
 export const useClaimDevice = () =>
   useInvalidating((v: { deviceId: string; name?: string }) => api.claimDevice(v.deviceId, v.name), [keys.devices]);
+export const useUpdateDevice = () =>
+  useInvalidating((v: { id: string; name: string }) => api.updateDevice(v.id, v.name), [keys.devices]);
 export const useUnclaimDevice = () =>
   useInvalidating((id: string) => api.unclaimDevice(id), [keys.devices, keys.rules, keys.alerts]);
 

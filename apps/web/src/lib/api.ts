@@ -26,6 +26,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Mensagem para a UI; `byStatus` traduz códigos HTTP específicos da ação. */
+export function errorMessage(err: unknown, byStatus: Record<number, string> = {}): string {
+  if (err instanceof ApiError) return byStatus[err.status] ?? "Algo deu errado. Tente novamente.";
+  return "Sem conexão com o servidor.";
+}
+
 interface ReqOptions extends RequestInit {
   /** false = 401 é resposta esperada (ex.: senha errada) e não derruba a sessão. */
   redirectOn401?: boolean;
@@ -69,6 +75,8 @@ export const api = {
   removeMember: (id: string) => req<void>(`/team/members/${id}`, json("DELETE")),
   claimDevice: (deviceId: string, name?: string) =>
     req<{ id: string }>("/team/devices", json("POST", { deviceId, name: name || undefined })),
+  updateDevice: (id: string, name: string) =>
+    req<{ id: string; name: string | null }>(`/team/devices/${encodeURIComponent(id)}`, json("PATCH", { name })),
   unclaimDevice: (id: string) => req<void>(`/team/devices/${encodeURIComponent(id)}`, json("DELETE")),
 
   devices: () => req<DeviceDto[]>("/devices"),

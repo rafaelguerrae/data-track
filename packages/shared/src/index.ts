@@ -107,6 +107,10 @@ export const claimDeviceInputSchema = z.object({
 });
 export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
 
+/** Nome vazio limpa o nome (o sensor volta a aparecer pelo ID). */
+export const updateDeviceInputSchema = z.object({ name: z.string().trim().max(80) });
+export type UpdateDeviceInput = z.infer<typeof updateDeviceInputSchema>;
+
 export interface TeamDto {
   id: string;
   name: string;
