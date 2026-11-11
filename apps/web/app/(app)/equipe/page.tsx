@@ -43,9 +43,9 @@ export default function TeamPage() {
           <p className="text-sm text-muted">Pessoas e sensores desta equipe.</p>
         </div>
         {isAdmin && (
-          <Button variant="secondary" className="px-3 py-1.5" onClick={() => setTeamOpen(true)}>
+          <Button className="px-3 py-1.5" onClick={() => setTeamOpen(true)}>
             <Pencil className="size-4" aria-hidden />
-            Editar equipe
+            Editar
           </Button>
         )}
       </div>

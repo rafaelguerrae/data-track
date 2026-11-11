@@ -1,6 +1,6 @@
 "use client";
-import type { AlertRuleInput, Bucket, InviteInput } from "@data-track/shared";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ALERT_PAGE_SIZE, type AlertKind, type AlertRuleInput, type AlertRuleUpdate, type Bucket, type InviteInput } from "@data-track/shared";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "#lib/api";
 
 const POLL_MS = 5000;
@@ -10,7 +10,7 @@ export const keys = {
   devices: ["devices"] as const,
   readings: (id: string | null, range: string) => ["readings", id, range] as const,
   rules: ["alert-rules"] as const,
-  alerts: ["alerts"] as const,
+  alerts: ["alerts"] as const, // prefixo: invalida todas as combinações de filtro
   team: ["team"] as const,
 };
 
@@ -29,7 +29,20 @@ export const useReadings = (deviceId: string | null, range: { label: string; hou
   });
 
 export const useRules = () => useQuery({ queryKey: keys.rules, queryFn: api.rules, refetchInterval: POLL_MS });
-export const useAlerts = () => useQuery({ queryKey: keys.alerts, queryFn: api.alerts, refetchInterval: POLL_MS });
+export interface AlertFilters {
+  deviceId?: string;
+  kind?: AlertKind;
+}
+
+/** Histórico paginado por cursor: cada página começa no id do último item da anterior. */
+export const useAlertHistory = (filters: AlertFilters) =>
+  useInfiniteQuery({
+    queryKey: [...keys.alerts, filters],
+    queryFn: ({ pageParam }) => api.alerts({ ...filters, before: pageParam }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.length < ALERT_PAGE_SIZE ? undefined : last.at(-1)?.id),
+    refetchInterval: 15_000,
+  });
 export const useTeam = () => useQuery({ queryKey: keys.team, queryFn: api.team, refetchInterval: 15_000 });
 
 /** Mutation que invalida as queries indicadas ao terminar com sucesso. */
@@ -42,8 +55,9 @@ function useInvalidating<TVars, TData>(fn: (v: TVars) => Promise<TData>, invalid
 }
 
 export const useCreateRule = () => useInvalidating((b: AlertRuleInput) => api.createRule(b), [keys.rules]);
-export const useToggleRule = () =>
-  useInvalidating((v: { id: number; enabled: boolean }) => api.toggleRule(v.id, v.enabled), [keys.rules]);
+export const useUpdateRule = () =>
+  useInvalidating((v: { id: number; patch: AlertRuleUpdate }) => api.updateRule(v.id, v.patch), [keys.rules]);
+export const useTestRule = () => useMutation({ mutationFn: (id: number) => api.testRule(id) });
 export const useDeleteRule = () => useInvalidating((id: number) => api.deleteRule(id), [keys.rules, keys.alerts]);
 
 // O nome da equipe aparece no menu do usuário (me) e na página Equipe.

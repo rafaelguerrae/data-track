@@ -1,12 +1,14 @@
 import type { AlertKind } from "@data-track/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "#db/client";
-import { alertEvents, alertRules } from "#db/schema";
+import { alertEvents, alertRules, devices } from "#db/schema";
 import { sendAlertEmail } from "#alerts/mailer";
-import { inCooldown, matchesTemp } from "#alerts/rules";
+import { KIND_SUBJECT, buildMessage, inCooldown, matchesTemp } from "#alerts/rules";
 
 async function trigger(rule: typeof alertRules.$inferSelect, message: string) {
-  const subject = `[Data Track] ${rule.deviceId}: ${rule.kind}`;
+  const [device] = await db.select({ name: devices.name }).from(devices).where(eq(devices.id, rule.deviceId)).limit(1);
+  const sensor = device?.name ?? rule.deviceId;
+  const subject = `[Data Track] ${sensor}: ${KIND_SUBJECT[rule.kind] ?? rule.kind}`;
   await db.insert(alertEvents).values({
     ruleId: rule.id,
     deviceId: rule.deviceId,
@@ -15,7 +17,7 @@ async function trigger(rule: typeof alertRules.$inferSelect, message: string) {
   });
   await db.update(alertRules).set({ lastTriggeredAt: new Date() }).where(eq(alertRules.id, rule.id));
   try {
-    await sendAlertEmail(rule.email, subject, message);
+    await sendAlertEmail(rule.email, subject, `Sensor: ${sensor}\n${message}`);
   } catch (err) {
     console.error("failed to send alert email", err);
   }
@@ -32,7 +34,7 @@ async function rulesFor(deviceId: string, kinds: AlertKind[]) {
 export async function onReading(deviceId: string, tempC: number) {
   for (const rule of await rulesFor(deviceId, ["temp_above", "temp_below"])) {
     if (matchesTemp(rule, tempC)) {
-      await trigger(rule, `Temperature ${tempC.toFixed(2)} °C crossed threshold ${rule.threshold} °C (${rule.kind}) on ${deviceId}.`);
+      await trigger(rule, buildMessage(rule.kind, { tempC, threshold: rule.threshold }));
     }
   }
 }
@@ -40,12 +42,12 @@ export async function onReading(deviceId: string, tempC: number) {
 export async function onStatus(deviceId: string, online: boolean) {
   if (online) return;
   for (const rule of await rulesFor(deviceId, ["offline"])) {
-    await trigger(rule, `Device ${deviceId} went offline.`);
+    await trigger(rule, buildMessage(rule.kind, {}));
   }
 }
 
 export async function onFault(deviceId: string, code: string) {
   for (const rule of await rulesFor(deviceId, ["fault"])) {
-    await trigger(rule, `Sensor fault ${code} reported by ${deviceId}.`);
+    await trigger(rule, buildMessage(rule.kind, { code }));
   }
 }

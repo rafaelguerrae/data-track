@@ -27,6 +27,11 @@ A API assina `data-track/+/temperature/#` (pega os três) e carimba o horário d
 
 Regras (tela **Alertas**): temperatura acima/abaixo de um limite, dispositivo offline, falha do sensor. Cada regra tem um intervalo mínimo (cooldown) entre e-mails.
 
+- **Regras** (qualquer membro da equipe): criar e editar em modal, ativar/desativar e excluir. Editar a condição (tipo ou limite) zera o último disparo, para o intervalo antigo não silenciar a regra nova. O sensor de uma regra não muda; para trocá-lo, crie outra.
+- **E-mail de teste** (`POST /alert-rules/:id/test`, 5 por minuto): manda um aviso de exemplo ao destinatário da regra para validar SMTP e endereço.
+- **Histórico** (`GET /alerts`): paginado por cursor (`before` = id do último item, 30 por página) e filtrável por sensor (`deviceId`) e tipo (`kind`). Excluir uma regra apaga o histórico dela (cascata).
+- Mensagens e assuntos de e-mail são gerados em português por `buildMessage()` (`apps/api/src/alerts/rules.ts`), com o nome do sensor (ou o ID, se não tiver nome). Eventos gravados antes dessa mudança continuam com o texto antigo em inglês.
+
 ## Usuários e equipes
 
 - Todo usuário pertence a **uma equipe**, com papel `admin` ou `member`. Sensores, regras e histórico de alertas são da equipe: todos os membros veem os mesmos dados.

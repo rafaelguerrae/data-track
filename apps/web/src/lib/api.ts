@@ -2,7 +2,9 @@ import type {
   AcceptInviteInput,
   AlertEventDto,
   AlertRuleDto,
+  AlertKind,
   AlertRuleInput,
+  AlertRuleUpdate,
   Bucket,
   DeviceDto,
   InviteDto,
@@ -86,7 +88,14 @@ export const api = {
     req<SeriesPoint[]>(`/devices/${encodeURIComponent(id)}/readings?from=${from.toISOString()}&bucket=${bucket}`),
   rules: () => req<AlertRuleDto[]>("/alert-rules"),
   createRule: (body: AlertRuleInput) => req<AlertRuleDto>("/alert-rules", json("POST", body)),
-  toggleRule: (id: number, enabled: boolean) => req<AlertRuleDto>(`/alert-rules/${id}`, json("PATCH", { enabled })),
+  updateRule: (id: number, patch: AlertRuleUpdate) => req<AlertRuleDto>(`/alert-rules/${id}`, json("PATCH", patch)),
+  testRule: (id: number) => req<{ ok: true }>(`/alert-rules/${id}/test`, json("POST")),
   deleteRule: (id: number) => req<void>(`/alert-rules/${id}`, json("DELETE")),
-  alerts: () => req<AlertEventDto[]>("/alerts"),
+  alerts: (f: { deviceId?: string; kind?: AlertKind; before?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (f.deviceId) q.set("deviceId", f.deviceId);
+    if (f.kind) q.set("kind", f.kind);
+    if (f.before) q.set("before", String(f.before));
+    return req<AlertEventDto[]>(`/alerts${q.size ? `?${q}` : ""}`);
+  },
 };

@@ -1,6 +1,5 @@
 "use client";
 import type { DeviceDto } from "@data-track/shared";
-import { Save } from "lucide-react";
 import { useState } from "react";
 import { Button } from "#components/ui/button";
 import { Dialog } from "#components/ui/dialog";
@@ -38,7 +37,6 @@ function EditForm({ device, onDone }: { device: DeviceDto; onDone: () => void })
       </Field>
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <Button className="w-full" disabled={update.isPending}>
-        <Save className="size-4" aria-hidden />
         {update.isPending ? "Salvando…" : "Salvar"}
       </Button>
     </form>

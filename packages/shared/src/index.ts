@@ -42,6 +42,20 @@ export const alertRuleInputSchema = z.object({
 });
 export type AlertRuleInput = z.infer<typeof alertRuleInputSchema>;
 
+/** Atualização parcial de uma regra (o sensor não muda). */
+export const alertRuleUpdateSchema = z
+  .object({
+    kind: alertKindSchema,
+    threshold: z.number().nullable(),
+    cooldownMin: z.number().int().min(1),
+    email: z.string().email(),
+    enabled: z.boolean(),
+  })
+  .partial();
+export type AlertRuleUpdate = z.infer<typeof alertRuleUpdateSchema>;
+
+export const ALERT_PAGE_SIZE = 30;
+
 export const bucketSchema = z.enum(["1m", "5m", "15m", "1h", "1d"]);
 export type Bucket = z.infer<typeof bucketSchema>;
 export const BUCKET_INTERVAL: Record<Bucket, string> = {
