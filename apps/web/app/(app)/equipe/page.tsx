@@ -4,6 +4,7 @@ import { Link2, Pencil, Unlink, UserMinus, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { ClaimDeviceDialog } from "#components/team/claim-device-dialog";
 import { EditDeviceDialog } from "#components/team/edit-device-dialog";
+import { EditTeamDialog } from "#components/team/edit-team-dialog";
 import { InviteDialog } from "#components/team/invite-dialog";
 import { Badge, OnlineBadge } from "#components/ui/badge";
 import { Button } from "#components/ui/button";
@@ -22,6 +23,7 @@ export default function TeamPage() {
   const removeMember = useRemoveMember();
   const unclaimDevice = useUnclaimDevice();
 
+  const [teamOpen, setTeamOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [editing, setEditing] = useState<DeviceDto | null>(null);
@@ -35,9 +37,17 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">{me.team.name}</h1>
-        <p className="text-sm text-muted">Pessoas e sensores desta equipe.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">{me.team.name}</h1>
+          <p className="text-sm text-muted">Pessoas e sensores desta equipe.</p>
+        </div>
+        {isAdmin && (
+          <Button variant="secondary" className="px-3 py-1.5" onClick={() => setTeamOpen(true)}>
+            <Pencil className="size-4" aria-hidden />
+            Editar equipe
+          </Button>
+        )}
       </div>
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
@@ -135,6 +145,7 @@ export default function TeamPage() {
         </Card>
       </section>
 
+      <EditTeamDialog open={teamOpen} name={me.team.name} onClose={() => setTeamOpen(false)} />
       <ClaimDeviceDialog open={claimOpen} onClose={() => setClaimOpen(false)} />
       <EditDeviceDialog device={editing} onClose={() => setEditing(null)} />
       <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />

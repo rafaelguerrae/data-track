@@ -10,6 +10,7 @@ import type {
   InvitePreviewDto,
   LoginInput,
   SeriesPoint,
+  TeamDto,
   TeamDetailDto,
   UserDto,
 } from "@data-track/shared";
@@ -69,6 +70,7 @@ export const api = {
     req<{ ok: true }>(`/auth/invites/${token}/accept`, { ...json("POST", body), redirectOn401: false }),
 
   team: () => req<TeamDetailDto>("/team"),
+  updateTeam: (name: string) => req<TeamDto>("/team", json("PATCH", { name })),
   createInvite: (body: InviteInput) =>
     req<{ invite: InviteDto; link: string; emailSent: boolean }>("/team/invites", json("POST", body)),
   deleteInvite: (id: string) => req<void>(`/team/invites/${id}`, json("DELETE")),

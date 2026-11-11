@@ -2,6 +2,7 @@ import {
   claimDeviceInputSchema,
   inviteInputSchema,
   updateDeviceInputSchema,
+  updateTeamInputSchema,
   type InviteDto,
   type MemberDto,
   type Role,
@@ -15,7 +16,7 @@ import { sendEmail } from "#alerts/mailer";
 import { requireAdmin, requireAuth } from "#auth/session";
 import { addDays, generateToken, hashToken } from "#auth/tokens";
 import { db } from "#db/client";
-import { alertRules, devices, invites, memberships, users } from "#db/schema";
+import { alertRules, devices, invites, memberships, teams, users } from "#db/schema";
 import { env } from "#env";
 
 const INVITE_TTL_DAYS = 7;
@@ -47,6 +48,15 @@ export async function teamRoutes(app: FastifyInstance) {
         (i): InviteDto => ({ id: i.id, email: i.email, role: i.role as Role, expiresAt: i.expiresAt.toISOString() }),
       ),
     };
+  });
+
+  r.patch("/team", { preHandler: requireAdmin, schema: { body: updateTeamInputSchema } }, async (req) => {
+    const [row] = await db
+      .update(teams)
+      .set({ name: req.body.name })
+      .where(eq(teams.id, req.auth!.teamId))
+      .returning({ id: teams.id, name: teams.name });
+    return row!;
   });
 
   r.post("/team/invites", { preHandler: requireAdmin, schema: { body: inviteInputSchema } }, async (req, reply) => {

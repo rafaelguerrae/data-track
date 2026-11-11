@@ -111,6 +111,9 @@ export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
 export const updateDeviceInputSchema = z.object({ name: z.string().trim().max(80) });
 export type UpdateDeviceInput = z.infer<typeof updateDeviceInputSchema>;
 
+export const updateTeamInputSchema = z.object({ name: z.string().trim().min(1).max(80) });
+export type UpdateTeamInput = z.infer<typeof updateTeamInputSchema>;
+
 export interface TeamDto {
   id: string;
   name: string;

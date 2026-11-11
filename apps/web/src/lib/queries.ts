@@ -46,6 +46,8 @@ export const useToggleRule = () =>
   useInvalidating((v: { id: number; enabled: boolean }) => api.toggleRule(v.id, v.enabled), [keys.rules]);
 export const useDeleteRule = () => useInvalidating((id: number) => api.deleteRule(id), [keys.rules, keys.alerts]);
 
+// O nome da equipe aparece no menu do usuário (me) e na página Equipe.
+export const useUpdateTeam = () => useInvalidating((name: string) => api.updateTeam(name), [keys.me, keys.team]);
 export const useCreateInvite = () => useInvalidating((b: InviteInput) => api.createInvite(b), [keys.team]);
 export const useDeleteInvite = () => useInvalidating((id: string) => api.deleteInvite(id), [keys.team]);
 export const useRemoveMember = () => useInvalidating((id: string) => api.removeMember(id), [keys.team]);
