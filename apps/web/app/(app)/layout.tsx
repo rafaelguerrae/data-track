@@ -23,10 +23,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-1 px-4 pt-3 pb-1 sm:py-3">
+        <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-2 sm:py-3">
           <Link href="/dashboard" aria-label="Data Track"><Brand height={52} /></Link>
-          {/* No celular a navegação desce para uma segunda linha, rolável se faltar espaço. */}
-          <nav className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto pb-2 sm:order-none sm:mx-0 sm:w-auto sm:pb-0">
+          {/* Navegação no topo só em telas maiores; no celular fica na barra inferior. */}
+          <nav aria-label="Principal" className="hidden gap-1 sm:flex">
             {NAV.map((n) => {
               const active = pathname.startsWith(n.href);
               return (
@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={n.href}
                   href={n.href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition sm:py-1.5 ${active ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition ${active ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
                 >
                   <n.icon className="size-4" aria-hidden />
                   {n.label}
@@ -53,7 +53,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+
+      {/* Reserva espaço para a barra inferior (altura + área segura do iOS) só no celular. */}
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:py-8 sm:pb-8">
         {me.data ? (
           <UserContext.Provider value={me.data}>{children}</UserContext.Provider>
         ) : me.isError ? (
@@ -62,6 +64,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-sm text-muted">Carregando…</p>
         )}
       </main>
+
+      <nav
+        aria-label="Principal"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+      >
+        <ul className="mx-auto flex max-w-md">
+          {NAV.map((n) => {
+            const active = pathname.startsWith(n.href);
+            return (
+              <li key={n.href} className="flex-1">
+                <Link
+                  href={n.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex flex-col items-center gap-1 px-2 pt-2.5 pb-2 text-xs font-medium transition ${active ? "text-accent" : "text-muted"}`}
+                >
+                  <span className={`grid h-7 w-14 place-items-center rounded-full transition ${active ? "bg-accent-soft" : ""}`}>
+                    <n.icon className="size-5" aria-hidden />
+                  </span>
+                  {n.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

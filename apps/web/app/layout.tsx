@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "#components/providers";
 import "./globals.css";
@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Data Track",
   icons: { apple: "/data-track-simple-logo.png" },
 };
+
+// viewportFit "cover" habilita env(safe-area-inset-*) para a barra inferior no iOS.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
