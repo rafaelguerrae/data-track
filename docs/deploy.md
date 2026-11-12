@@ -164,6 +164,46 @@ O firmware atual usa `WiFiClient` (sem TLS) e não está preparado para isso. Aj
 - Trocar `WiFiClient` por `WiFiClientSecure` e chamar `setCACert(...)` com a raiz ISRG Root X1 (Let's Encrypt). Para testes, `setInsecure()` funciona, mas não valida o servidor.
 - `MQTT_HOST` = `data-track.duckdns.org`, `MQTT_PORT` = `8883`, `MQTT_USER` = `device`, `MQTT_PASS` = a senha criada acima.
 
+## 5. CI/CD (GitHub Actions)
+
+- **CI** (`.github/workflows/ci.yml`, em todo PR para `main`): `pnpm typecheck`, `pnpm build`, checagem de que `schema.ts` não mudou sem migration (`db:generate` não pode gerar arquivos novos), build da imagem da API e validação do `docker-compose.prod.yml`.
+- **CD** (`.github/workflows/cd.yml`, no push em `main`): roda o CI como portão e, se passar, executa `scripts/deploy-vps.sh` na VPS por SSH. Só dispara quando o commit toca API, `packages/shared`, `infra/mosquitto`, o compose, o lockfile ou `turbo.json`; merges só de `apps/web` ou `docs/` não fazem deploy (o frontend é da Vercel).
+
+O script atualiza **só a API e o Mosquitto**. Caddy, TimescaleDB, `.env.prod`, `infra/mosquitto/passwords`/`acl` e o cron do certificado continuam manuais. Se um merge adicionar variável nova ao `.env.prod.example`, edite o `.env.prod` da VPS **antes** do merge.
+
+O que o script faz:
+
+1. `git merge --ff-only origin/main` (falha, em vez de sobrescrever, se a VPS tiver edição manual) e calcula o escopo pelo diff do commit.
+2. Se `apps/api/drizzle/` mudou, faz `pg_dump` em `~/backups/pre-<sha>.dump` (mantém os 5 últimos).
+3. Recria o Mosquitto (`--force-recreate`, porque a config é bind mount) e reconstrói a API na VPS com `--no-deps`.
+4. Health check de até ~60 s: `https://<DOMAIN>/health` e `[mqtt] connected` no log da API. Se falhar, volta para a imagem anterior (`data-track-api:previous`) e o job fica vermelho. Migrations só andam para frente: o rollback é de código.
+
+### Configuração (uma vez)
+
+Crie uma chave **só para o CD**, sem passphrase (não reutilize a `id_data_track`), e autorize-a na VPS com `restrict` (sem pty nem forwarding):
+
+```bash
+ssh-keygen -t ed25519 -N "" -C "github-actions-deploy" -f ~/.ssh/gh_deploy
+ssh data-track "echo 'restrict $(cat ~/.ssh/gh_deploy.pub)' >> ~/.ssh/authorized_keys"
+```
+
+No repositório GitHub, crie o Environment `production` (Settings → Environments) e cadastre os secrets nele. Para o `VPS_KNOWN_HOSTS`, confira a impressão digital com `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` na VPS antes de confiar:
+
+```bash
+gh secret set VPS_SSH_KEY --env production < ~/.ssh/gh_deploy
+gh secret set VPS_HOST --env production --body "data-track.duckdns.org"
+gh secret set VPS_USER --env production --body "deploy"
+ssh-keyscan -t ed25519 data-track.duckdns.org | gh secret set VPS_KNOWN_HOSTS --env production
+rm ~/.ssh/gh_deploy ~/.ssh/gh_deploy.pub     # a cópia do GitHub basta
+```
+
+Em Settings → Branches, proteja a `main` exigindo os checks `ci` e `docker` antes do merge.
+
+### Uso
+
+- **Deploy manual / ensaio:** Actions → CD → *Run workflow*. Com `dry_run` marcado, o log mostra o escopo e os comandos sem alterar a VPS. Sem `dry_run`, redeploya os dois serviços.
+- **Reverter à mão** (quando o rollback automático não bastar): `docker tag data-track-api:previous data-track-api:latest && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps api`. Para voltar dados, restaure o dump com `SELECT timescaledb_pre_restore();` antes do `pg_restore` e `SELECT timescaledb_post_restore();` depois.
+
 ## Verificação
 
 ```bash
@@ -176,5 +216,5 @@ curl https://data-track.duckdns.org/devices
 
 - Sem recuperação de senha nem troca de senha pelo app: um admin remove o usuário e convida de novo.
 - Sensores continuam criados por qualquer mensagem MQTT autenticada com a senha `device`; a equipe só os vê depois de vinculá-los pelo ID.
-- Sem backup automático do banco (volume `pg-data`).
+- O backup do banco só acontece antes de migrations (CD, últimos 5 em `~/backups`); não há backup periódico do volume `pg-data`.
 - O restart do Mosquitto que recarrega o certificado é mensal (cron): uma renovação logo após o restart só é carregada no mês seguinte, ainda dentro da validade de 90 dias.

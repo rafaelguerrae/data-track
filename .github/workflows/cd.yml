@@ -1,0 +1,67 @@
+# CD: atualiza na VPS só a API e o Mosquitto quando algo relevante entra na main.
+# Caddy e TimescaleDB não são tocados, e o frontend é deployado pela Vercel.
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - packages/shared/**
+      - infra/mosquitto/**
+      - docker-compose.prod.yml
+      - .dockerignore
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - turbo.json
+      - scripts/deploy-vps.sh
+      - .github/workflows/cd.yml
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Só mostra o que seria feito, sem alterar a VPS
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Um deploy por vez; um deploy em andamento nunca é cancelado no meio.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      # Disparo manual redeploya os dois serviços; no push, o escopo vem do diff do commit.
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # O script roda na VPS via stdin; a versão executada é sempre a do commit deste workflow.
+      - name: Deploy na VPS
+        run: |
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" "DRY_RUN=$DRY_RUN FORCE=$FORCE bash -s" < scripts/deploy-vps.sh
