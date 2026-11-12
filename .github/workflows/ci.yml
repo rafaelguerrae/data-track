@@ -1,0 +1,74 @@
+# CI: consistência do código nos PRs. Também é reutilizado pelo cd.yml como portão do deploy.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+# Só cancela execuções antigas de PR; nunca a de um push em main (usada pelo CD).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # A versão do pnpm vem do campo `packageManager` do package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (api, web, shared)
+        run: pnpm typecheck
+
+      - name: Build (shared, api, web)
+        run: pnpm build
+
+      # Mudou o schema sem gerar a migration? O generate cria arquivos novos em apps/api/drizzle.
+      # Não precisa de banco: o DATABASE_URL só satisfaz o drizzle.config.ts.
+      - name: Migrations em dia com o schema
+        env:
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+        run: |
+          pnpm --filter @data-track/api db:generate
+          if [ -n "$(git status --porcelain -- apps/api/drizzle)" ]; then
+            echo "::error::schema.ts mudou sem migration. Rode 'pnpm --filter @data-track/api db:generate' e commite apps/api/drizzle."
+            git status --short -- apps/api/drizzle
+            exit 1
+          fi
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pega falhas que só existem no Docker (corepack/pnpm, política do lockfile, build da API).
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build da imagem da API (sem push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Valida o compose de produção
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod.example config -q
