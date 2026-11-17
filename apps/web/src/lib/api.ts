@@ -11,9 +11,12 @@ import type {
   InviteInput,
   InvitePreviewDto,
   LoginInput,
+  ResetPasswordInput,
+  ResetRequestInput,
   SeriesPoint,
   TeamDto,
   TeamDetailDto,
+  TwoFactorInput,
   UserDto,
 } from "@data-track/shared";
 
@@ -64,6 +67,12 @@ const json = (method: string, body?: unknown): ReqOptions => ({
 
 export const api = {
   login: (body: LoginInput) => req<{ ok: true }>("/auth/login", { ...json("POST", body), redirectOn401: false }),
+  resetRequest: (body: ResetRequestInput) =>
+    req<{ ok: true }>("/auth/password-reset/request", { ...json("POST", body), redirectOn401: false }),
+  validateTwoFactor: (body: TwoFactorInput) =>
+    req<{ ok: true }>("/auth/2fa/validate", { ...json("POST", body), redirectOn401: false }),
+  resetPassword: (body: ResetPasswordInput) =>
+    req<{ ok: true }>("/auth/password-reset", { ...json("POST", body), redirectOn401: false }),
   logout: () => req<void>("/auth/logout", json("POST")),
   me: () => req<UserDto>("/auth/me"),
   invitePreview: (token: string) =>
