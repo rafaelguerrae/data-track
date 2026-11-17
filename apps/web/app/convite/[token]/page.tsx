@@ -7,6 +7,7 @@ import { Brand } from "#components/brand";
 import { Button } from "#components/ui/button";
 import { Card } from "#components/ui/card";
 import { Field, inputClass } from "#components/ui/field";
+import { PasswordInput } from "#components/ui/password-input";
 import { ApiError, api } from "#lib/api";
 
 export default function InvitePage() {
@@ -59,9 +60,7 @@ export default function InvitePage() {
                 <Field label="Nome">
                   <input className={inputClass} required maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
                 </Field>
-                <Field label="Senha (mínimo 8 caracteres)">
-                  <input className={inputClass} type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </Field>
+                <PasswordInput label="Senha (mínimo 8 caracteres)" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 {error && <p role="alert" className="text-sm text-danger">{error}</p>}
                 <Button className="w-full" disabled={accept.isPending || accept.isSuccess}>{!accept.isPending && <UserPlus className="size-4" aria-hidden />}{accept.isPending ? "Criando…" : "Criar conta e entrar"}</Button>
               </form>

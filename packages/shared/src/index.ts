@@ -103,6 +103,22 @@ export const loginInputSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginInputSchema>;
 
+export const resetRequestInputSchema = z.object({
+  email: z.string().email(),
+});
+export type ResetRequestInput = z.infer<typeof resetRequestInputSchema>;
+
+export const twoFactorInputSchema = z.object({
+  email: z.string().email(),
+  code: z.string().regex(/^\d{4}$/),
+});
+export type TwoFactorInput = z.infer<typeof twoFactorInputSchema>;
+
+export const resetPasswordInputSchema = twoFactorInputSchema.extend({
+  password: z.string().min(8).max(200),
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordInputSchema>;
+
 export const acceptInviteInputSchema = z.object({
   name: z.string().trim().min(1).max(80),
   password: z.string().min(8).max(200),

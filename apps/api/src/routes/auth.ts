@@ -1,6 +1,9 @@
 import {
   acceptInviteInputSchema,
   loginInputSchema,
+  resetPasswordInputSchema,
+  resetRequestInputSchema,
+  twoFactorInputSchema,
   type InvitePreviewDto,
   type Role,
   type UserDto,
@@ -19,10 +22,18 @@ import {
 } from "#auth/session";
 import { hashToken } from "#auth/tokens";
 import { db } from "#db/client";
-import { invites, memberships, teams, users } from "#db/schema";
+import { invites, memberships, sessions, teams, users } from "#db/schema";
 
 // Hash descartável para que login com e-mail inexistente custe o mesmo tempo de um existente.
 const dummyHash = hashPassword("dummy-password-for-timing");
+
+// MOCK do 2FA: o código é fixo. Trocar por verificação real do código enviado por e-mail
+// (guardar hash + validade em tabela) quando o envio existir.
+const MOCK_TWO_FACTOR_CODE = "6767";
+
+function isValidTwoFactorCode(_email: string, code: string): boolean {
+  return code === MOCK_TWO_FACTOR_CODE;
+}
 
 const tokenParams = z.object({ token: z.string().min(10).max(200) });
 
@@ -69,6 +80,59 @@ export async function authRoutes(app: FastifyInstance) {
     clearSessionCookie(reply);
     return reply.code(204).send();
   });
+
+  // Recuperação de senha em 3 passos: pedir código, validar o 2FA, definir a nova senha.
+  // Nenhuma resposta revela se o e-mail tem cadastro.
+  r.post(
+    "/auth/password-reset/request",
+    {
+      schema: { body: resetRequestInputSchema },
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async () => {
+      // MOCK: aqui entraria o envio do código por e-mail (sendEmail em #alerts/mailer).
+      return { ok: true };
+    },
+  );
+
+  r.post(
+    "/auth/2fa/validate",
+    {
+      schema: { body: twoFactorInputSchema },
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      if (!isValidTwoFactorCode(req.body.email, req.body.code)) {
+        return reply.code(400).send({ error: "invalid code" });
+      }
+      return { ok: true };
+    },
+  );
+
+  r.post(
+    "/auth/password-reset",
+    {
+      schema: { body: resetPasswordInputSchema },
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      // Revalida o código para que o passo final não possa ser chamado pulando o 2FA.
+      if (!isValidTwoFactorCode(req.body.email, req.body.code)) {
+        return reply.code(400).send({ error: "invalid code" });
+      }
+      const email = req.body.email.trim().toLowerCase();
+      const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      if (user) {
+        const passwordHash = await hashPassword(req.body.password);
+        await db.transaction(async (tx) => {
+          await tx.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+          // Quem tinha a senha antiga não pode continuar logado.
+          await tx.delete(sessions).where(eq(sessions.userId, user.id));
+        });
+      }
+      return { ok: true };
+    },
+  );
 
   r.get("/auth/me", { preHandler: requireAuth }, async (req): Promise<UserDto> => req.auth!.user);
 
