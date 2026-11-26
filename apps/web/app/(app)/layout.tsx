@@ -2,11 +2,14 @@
 import { BellRing, LayoutDashboard, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { AlertToaster } from "#components/alert-toaster";
 import { Brand } from "#components/brand";
+import { DevTestAlert } from "#components/dev-test-alert";
 import { UserContext } from "#components/user-context";
 import { UserMenu } from "#components/user-menu";
 import { useLogout, useMe } from "#lib/queries";
+import { markAlertsRead, useAlertsUnread } from "#lib/unread-alerts";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,12 +17,26 @@ const NAV = [
   { href: "/equipe", label: "Equipe", icon: Users },
 ];
 
+function UnreadDot() {
+  return (
+    <span className="absolute -top-0.5 -right-1 size-2 rounded-full bg-danger ring-2 ring-surface">
+      <span className="sr-only">Há alertas novos</span>
+    </span>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   // Em 401 o cliente da API redireciona para o login.
   const me = useMe();
   const logout = useLogout();
+  const unread = useAlertsUnread();
+
+  // Abrir a tela de Alertas (ou receber um alerta já estando nela) conta como "visto".
+  useEffect(() => {
+    if (pathname.startsWith("/alertas") && unread) markAlertsRead();
+  }, [pathname, unread]);
 
   return (
     <div className="min-h-screen">
@@ -29,6 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <nav aria-label="Principal" className="hidden gap-1 sm:flex">
             {NAV.map((n) => {
               const active = pathname.startsWith(n.href);
+              const dot = n.href === "/alertas" && unread && !active;
               return (
                 <Link
                   key={n.href}
@@ -36,13 +54,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition ${active ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
                 >
-                  <n.icon className="size-4" aria-hidden />
+                  <span className="relative">
+                    <n.icon className="size-4" aria-hidden />
+                    {dot && <UnreadDot />}
+                  </span>
                   {n.label}
                 </Link>
               );
             })}
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <DevTestAlert />
             {me.data && (
               <UserMenu
                 user={me.data}
@@ -75,6 +97,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <ul className="mx-auto flex max-w-md">
           {NAV.map((n) => {
             const active = pathname.startsWith(n.href);
+            const dot = n.href === "/alertas" && unread && !active;
             return (
               <li key={n.href} className="flex-1">
                 <Link
@@ -83,7 +106,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   className={`flex flex-col items-center gap-1 px-2 pt-2.5 pb-2 text-xs font-medium transition ${active ? "text-accent" : "text-muted"}`}
                 >
                   <span className={`grid h-7 w-14 place-items-center rounded-full transition ${active ? "bg-accent-soft" : ""}`}>
-                    <n.icon className="size-5" aria-hidden />
+                    <span className="relative">
+                      <n.icon className="size-5" aria-hidden />
+                      {dot && <UnreadDot />}
+                    </span>
                   </span>
                   {n.label}
                 </Link>
