@@ -2,6 +2,7 @@
 import { BellRing, LayoutDashboard, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { AlertToaster } from "#components/alert-toaster";
 import { Brand } from "#components/brand";
 import { UserContext } from "#components/user-context";
 import { UserMenu } from "#components/user-menu";
@@ -25,7 +26,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-2 sm:py-3">
           <Link href="/dashboard" aria-label="Data Track"><Brand height={52} /></Link>
-          {/* Navegação no topo só em telas maiores; no celular fica na barra inferior. */}
           <nav aria-label="Principal" className="hidden gap-1 sm:flex">
             {NAV.map((n) => {
               const active = pathname.startsWith(n.href);
@@ -57,7 +57,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Reserva espaço para a barra inferior (altura + área segura do iOS) só no celular. */}
       <main className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:py-8 sm:pb-8">
         {me.data ? (
-          <UserContext.Provider value={me.data}>{children}</UserContext.Provider>
+          <UserContext.Provider value={me.data}>
+            {children}
+            <AlertToaster />
+          </UserContext.Provider>
         ) : me.isError ? (
           <p className="text-sm text-danger">Não foi possível carregar sua conta.</p>
         ) : (

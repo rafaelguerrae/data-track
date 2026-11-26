@@ -26,7 +26,6 @@ export const KIND_SUBJECT: Record<string, string> = {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
-/** Texto do evento de alerta (guardado no histórico e enviado por e-mail). */
 export function buildMessage(
   kind: string,
   d: { tempC?: number; threshold?: number | null; code?: string },

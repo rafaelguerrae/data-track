@@ -42,7 +42,6 @@ export const alertRuleInputSchema = z.object({
 });
 export type AlertRuleInput = z.infer<typeof alertRuleInputSchema>;
 
-/** Atualização parcial de uma regra (o sensor não muda). */
 export const alertRuleUpdateSchema = z
   .object({
     kind: alertKindSchema,

@@ -32,7 +32,6 @@ export async function teamRoutes(app: FastifyInstance) {
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(eq(memberships.teamId, teamId))
       .orderBy(users.name);
-    // Convites pendentes só aparecem para admins.
     const pending =
       user.role === "admin"
         ? await db

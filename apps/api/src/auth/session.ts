@@ -88,7 +88,6 @@ async function loadAuth(token: string, reply: FastifyReply): Promise<AuthContext
   };
 }
 
-/** preHandler: exige sessão válida e preenche `req.auth`. */
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   const token = req.cookies[SESSION_COOKIE];
   const auth = token ? await loadAuth(token, reply) : null;
@@ -99,7 +98,6 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   req.auth = auth;
 }
 
-/** preHandler: além de autenticado, exige papel de admin da equipe. */
 export async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   const denied = await requireAuth(req, reply);
   if (denied) return denied;
