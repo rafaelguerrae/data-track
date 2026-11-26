@@ -33,11 +33,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ci:
+  # Chama o CI como portão do deploy. O nome do job aparece como prefixo dos checks ("CD / gate / ci").
+  gate:
     uses: ./.github/workflows/ci.yml
 
   deploy:
-    needs: ci
+    needs: gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production

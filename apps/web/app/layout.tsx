@@ -18,7 +18,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${sans.variable} ${mono.variable}`}>
-      <body className="min-h-screen" cz-shortcut-listen="true">
+      <body className="min-h-dvh" cz-shortcut-listen="true">
         <Providers>{children}</Providers>
       </body>
     </html>

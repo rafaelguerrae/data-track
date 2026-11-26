@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Brand } from "#components/brand";
+import { AuthShell } from "#components/auth-shell";
 import { Button } from "#components/ui/button";
-import { Card } from "#components/ui/card";
 import { Field, inputClass } from "#components/ui/field";
 import { PasswordInput } from "#components/ui/password-input";
 import { ApiError, api } from "#lib/api";
@@ -34,28 +33,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex justify-center">
-          <Brand height={120} />
-        </div>
-        <Card className="space-y-4 p-6 shadow-sm">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">Acesso</h1>
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            <Field label="E-mail">
-              <input className={inputClass} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </Field>
-            <div className="space-y-1.5">
-              <PasswordInput label="Senha" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <Link href="/recuperar-senha" className="inline-block text-sm text-muted hover:text-ink hover:underline">Esqueci minha senha</Link>
-            </div>
-            {error && <p role="alert" className="text-sm text-danger">{error}</p>}
-            <Button className="w-full" disabled={login.isPending || login.isSuccess}>{!login.isPending && <LogIn className="size-4" aria-hidden />}{login.isPending ? "Entrando…" : "Entrar"}</Button>
-          </form>
-        </Card>
+    <AuthShell>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight">Acesso</h1>
       </div>
-    </main>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="E-mail">
+          <input className={inputClass} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <div className="space-y-1.5">
+          <PasswordInput label="Senha" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Link href="/recuperar-senha" className="inline-block text-sm text-muted hover:text-ink hover:underline">Esqueci minha senha</Link>
+        </div>
+        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+        <Button className="w-full" disabled={login.isPending || login.isSuccess}>{!login.isPending && <LogIn className="size-4" aria-hidden />}{login.isPending ? "Entrando…" : "Entrar"}</Button>
+      </form>
+    </AuthShell>
   );
 }
