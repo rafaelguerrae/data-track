@@ -8,7 +8,6 @@ export const KIND_LABEL: Record<AlertKind, string> = {
   fault: "Falha do sensor",
 };
 
-/** Rótulo curto, para filtros e badges. */
 export const KIND_SHORT: Record<AlertKind, string> = {
   temp_above: "Temperatura alta",
   temp_below: "Temperatura baixa",

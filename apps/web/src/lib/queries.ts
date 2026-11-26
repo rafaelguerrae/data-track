@@ -1,6 +1,7 @@
 "use client";
-import { ALERT_PAGE_SIZE, type AlertKind, type AlertRuleInput, type AlertRuleUpdate, type Bucket, type InviteInput } from "@data-track/shared";
+import { ALERT_PAGE_SIZE, type AlertEventDto, type AlertKind,type AlertRuleInput, type AlertRuleUpdate, type Bucket, type InviteInput } from "@data-track/shared";
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { api } from "#lib/api";
 
 const POLL_MS = 5000;
@@ -43,6 +44,58 @@ export const useAlertHistory = (filters: AlertFilters) =>
     getNextPageParam: (last) => (last.length < ALERT_PAGE_SIZE ? undefined : last.at(-1)?.id),
     refetchInterval: 15_000,
   });
+
+const LAST_ALERT_KEY = "dt_last_alert_id";
+
+const readLastAlertId = (): number | null => {
+  try {
+    const v = sessionStorage.getItem(LAST_ALERT_KEY);
+    return v == null ? null : Number(v);
+  } catch {
+    return null;
+  }
+};
+
+const saveLastAlertId = (id: number) => {
+  try {
+    sessionStorage.setItem(LAST_ALERT_KEY, String(id));
+  } catch {
+  }
+};
+
+/**
+ * Polling de alertas novos para o toast. O primeiro fetch só grava o id mais recente (sem avisar);
+ * os seguintes pedem `after=<último id visto>` e chamam `onNew` com o que chegou.
+ */
+export function useNewAlerts(onNew: (events: AlertEventDto[]) => void) {
+  const qc = useQueryClient();
+  const lastId = useRef<number | null>(null);
+  const handler = useRef(onNew);
+  handler.current = onNew;
+
+  return useQuery({
+    queryKey: ["new-alerts"],
+    refetchInterval: POLL_MS,
+    queryFn: async () => {
+      lastId.current ??= readLastAlertId();
+      if (lastId.current == null) {
+        const [latest] = await api.alerts({ limit: 1 });
+        lastId.current = latest?.id ?? 0;
+        saveLastAlertId(lastId.current);
+        return null;
+      }
+      const events = await api.alerts({ after: lastId.current, limit: 20 });
+      if (events.length) {
+        lastId.current = Math.max(...events.map((e) => e.id));
+        saveLastAlertId(lastId.current);
+        qc.invalidateQueries({ queryKey: keys.alerts });
+        handler.current(events);
+      }
+      return null;
+    },
+  });
+}
+
 export const useTeam = () => useQuery({ queryKey: keys.team, queryFn: api.team, refetchInterval: 15_000 });
 
 /** Mutation que invalida as queries indicadas ao terminar com sucesso. */

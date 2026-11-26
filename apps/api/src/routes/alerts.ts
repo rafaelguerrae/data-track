@@ -7,7 +7,7 @@ import {
   type AlertKind,
   type AlertRuleDto,
 } from "@data-track/shared";
-import { and, desc, eq, lt, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, lt, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -86,7 +86,6 @@ export async function alertRoutes(app: FastifyInstance) {
     },
   );
 
-  // Envia um e-mail de teste ao destinatário da regra, para validar o SMTP e o endereço.
   r.post(
     "/alert-rules/:id/test",
     {
@@ -132,6 +131,7 @@ export async function alertRoutes(app: FastifyInstance) {
           deviceId: z.string().optional(),
           kind: alertKindSchema.optional(),
           before: z.coerce.number().int().optional(),
+          after: z.coerce.number().int().optional(),
           limit: z.coerce.number().int().min(1).max(100).default(ALERT_PAGE_SIZE),
         }),
       },
@@ -142,6 +142,7 @@ export async function alertRoutes(app: FastifyInstance) {
       if (q.deviceId) filters.push(eq(alertEvents.deviceId, q.deviceId));
       if (q.kind) filters.push(eq(alertEvents.kind, q.kind));
       if (q.before) filters.push(lt(alertEvents.id, q.before));
+      if (q.after != null) filters.push(gt(alertEvents.id, q.after));
       const rows = await db
         .select({ e: alertEvents })
         .from(alertEvents)

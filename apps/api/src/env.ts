@@ -13,7 +13,6 @@ const schema = z.object({
   SMTP_PASS: z.string().optional(),
   MAIL_FROM: z.string().default("alerts@data-track.local"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
-  // URL pública da web, usada nos links de convite.
   WEB_URL: z.string().url().default("http://localhost:3000"),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(14),
   // "true" em produção (HTTPS) para o cookie de sessão levar o atributo Secure.

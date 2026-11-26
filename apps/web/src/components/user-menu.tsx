@@ -4,7 +4,6 @@ import type { UserDto } from "@data-track/shared";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "#components/ui/badge";
 
-/** Avatar com a inicial; ao clicar abre um menu com os dados da conta e o botão de sair. */
 export function UserMenu({ user, onLogout, busy }: { user: UserDto; onLogout: () => void; busy?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
