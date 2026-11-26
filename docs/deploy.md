@@ -90,9 +90,11 @@ cp .env.prod.example .env.prod && chmod 600 .env.prod
 
 Gere as senhas com `openssl rand -hex 24` e preencha o `.env.prod` (`POSTGRES_PASSWORD`, `MQTT_API_PASSWORD`, `SMTP_PASS`, `WEB_ORIGIN` sem barra no final). Não cole chaves em chats nem commits.
 
-**SMTP (Resend):** `SMTP_HOST=smtp.resend.com`, porta `587`, usuário `resend`, senha = API key, `MAIL_FROM=Data Track <noreply@rafaeldotdev.com>`. O domínio `rafaeldotdev.com` precisa estar **Verified** no Resend (Domains → Add Domain, depois crie no DNS os registros SPF, DKIM e, de preferência, DMARC que ele mostrar). Sem domínio verificado a API recebe erro do Resend e o envio falha (502 no e-mail de teste). O Resend não aceita remetente `gmail.com`/`outlook.com`, e o `duckdns.org` não serve para verificar domínio (você não controla o DNS dele).
+**SMTP (Resend):** `SMTP_HOST=smtp.resend.com`, porta `2587` (a Serverspace bloqueia 25, 465 e 587 de saída; o Resend aceita STARTTLS na 2587), usuário `resend`, senha = API key, `MAIL_FROM=Data Track <noreply@rafaeldotdev.com>`. O domínio `rafaeldotdev.com` precisa estar **Verified** no Resend (Domains → Add Domain, depois crie no DNS os registros SPF, DKIM e, de preferência, DMARC que ele mostrar). Sem domínio verificado a API recebe erro do Resend e o envio falha (502 no e-mail de teste). O Resend não aceita remetente `gmail.com`/`outlook.com`, e o `duckdns.org` não serve para verificar domínio (você não controla o DNS dele).
 
 Mudar só o `.env.prod` não dispara o deploy; recrie a API na VPS para ela ler os valores novos: `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps api`.
+
+Se o envio travar (convite pendente e request que não termina), teste as portas pela VPS: `timeout 6 bash -c "</dev/tcp/smtp.resend.com/2587" && echo ok`.
 
 Para validar o envio: use o botão de teste na tela de Alertas (regra com um e-mail seu) e confira o status **Delivered** em Emails no painel do Resend. No Gmail, "Mostrar original" deve exibir SPF, DKIM e DMARC como `PASS`. Em caso de erro, `docker compose -f docker-compose.prod.yml logs api`.
 

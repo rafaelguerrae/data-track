@@ -3,9 +3,8 @@ import { LogIn, UserPlus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Brand } from "#components/brand";
+import { AuthShell } from "#components/auth-shell";
 import { Button } from "#components/ui/button";
-import { Card } from "#components/ui/card";
 import { Field, inputClass } from "#components/ui/field";
 import { PasswordInput } from "#components/ui/password-input";
 import { ApiError, api } from "#lib/api";
@@ -36,38 +35,31 @@ export default function InvitePage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex justify-center">
-          <Brand height={120} />
-        </div>
-        <Card className="space-y-4 p-6 shadow-sm">
-          {invalid ? (
-            <>
-              <h1 className="text-xl font-semibold tracking-tight">Convite inválido</h1>
-              <p className="text-sm text-muted">O link expirou ou já foi usado. Peça um novo convite ao administrador da equipe.</p>
-              <Button variant="secondary" className="w-full" onClick={() => router.push("/")}><LogIn className="size-4" aria-hidden />Ir para o login</Button>
-            </>
-          ) : !invite ? (
-            <p className="text-sm text-muted">Verificando convite…</p>
-          ) : (
-            <>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">Entrar na equipe {invite.teamName}</h1>
-                <p className="text-sm text-muted">Crie sua conta para {invite.email}.</p>
-              </div>
-              <form onSubmit={submit} className="space-y-4">
-                <Field label="Nome">
-                  <input className={inputClass} required maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-                </Field>
-                <PasswordInput label="Senha (mínimo 8 caracteres)" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                {error && <p role="alert" className="text-sm text-danger">{error}</p>}
-                <Button className="w-full" disabled={accept.isPending || accept.isSuccess}>{!accept.isPending && <UserPlus className="size-4" aria-hidden />}{accept.isPending ? "Criando…" : "Criar conta e entrar"}</Button>
-              </form>
-            </>
-          )}
-        </Card>
-      </div>
-    </main>
+    <AuthShell>
+      {invalid ? (
+        <>
+          <h1 className="text-xl font-semibold tracking-tight">Convite inválido</h1>
+          <p className="text-sm text-muted">O link expirou ou já foi usado. Peça um novo convite ao administrador da equipe.</p>
+          <Button variant="secondary" className="w-full" onClick={() => router.push("/")}><LogIn className="size-4" aria-hidden />Ir para o login</Button>
+        </>
+      ) : !invite ? (
+        <p className="text-sm text-muted">Verificando convite…</p>
+      ) : (
+        <>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Entrar na equipe {invite.teamName}</h1>
+            <p className="text-sm text-muted">Crie sua conta para {invite.email}.</p>
+          </div>
+          <form onSubmit={submit} className="space-y-4">
+            <Field label="Nome">
+              <input className={inputClass} required maxLength={80} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
+            <PasswordInput label="Senha (mínimo 8 caracteres)" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+            <Button className="w-full" disabled={accept.isPending || accept.isSuccess}>{!accept.isPending && <UserPlus className="size-4" aria-hidden />}{accept.isPending ? "Criando…" : "Criar conta e entrar"}</Button>
+          </form>
+        </>
+      )}
+    </AuthShell>
   );
 }
