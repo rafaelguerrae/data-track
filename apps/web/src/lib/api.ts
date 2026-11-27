@@ -88,8 +88,11 @@ export const api = {
   removeMember: (id: string) => req<void>(`/team/members/${id}`, json("DELETE")),
   claimDevice: (deviceId: string, name?: string) =>
     req<{ id: string }>("/team/devices", json("POST", { deviceId, name: name || undefined })),
-  updateDevice: (id: string, name: string) =>
-    req<{ id: string; name: string | null }>(`/team/devices/${encodeURIComponent(id)}`, json("PATCH", { name })),
+  updateDevice: (id: string, name: string, icon: string | null) =>
+    req<{ id: string; name: string | null; icon: string | null }>(
+      `/team/devices/${encodeURIComponent(id)}`,
+      json("PATCH", { name, icon }),
+    ),
   unclaimDevice: (id: string) => req<void>(`/team/devices/${encodeURIComponent(id)}`, json("DELETE")),
 
   devices: () => req<DeviceDto[]>("/devices"),

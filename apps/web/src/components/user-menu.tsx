@@ -2,6 +2,7 @@
 import { LogOut, Mail, Users } from "lucide-react";
 import type { UserDto } from "@data-track/shared";
 import { useEffect, useRef, useState } from "react";
+import { Avatar } from "#components/avatar";
 import { Badge } from "#components/ui/badge";
 
 export function UserMenu({ user, onLogout, busy }: { user: UserDto; onLogout: () => void; busy?: boolean }) {
@@ -30,9 +31,9 @@ export function UserMenu({ user, onLogout, busy }: { user: UserDto; onLogout: ()
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Conta de ${user.name}`}
-        className="grid size-9 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-ink transition hover:opacity-90"
+        className="rounded-full transition hover:opacity-90"
       >
-        {user.name.trim().charAt(0).toUpperCase() || "?"}
+        <Avatar name={user.name} />
       </button>
       {open && (
         <div

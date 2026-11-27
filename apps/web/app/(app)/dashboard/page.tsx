@@ -1,8 +1,8 @@
 "use client";
-import { Thermometer } from "lucide-react";
 import type { Bucket } from "@data-track/shared";
 import Link from "next/link";
 import { useState } from "react";
+import { DeviceIcon } from "#components/device-icon";
 import { TempChart } from "#components/temp-chart";
 import { OnlineBadge } from "#components/ui/badge";
 import { Card, SectionTitle } from "#components/ui/card";
@@ -56,8 +56,8 @@ export default function Dashboard() {
               className={`rounded-xl border p-4 text-left transition ${d.id === deviceId ? "border-accent bg-accent-soft" : "border-line bg-surface hover:bg-surface-2"}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
-                  <Thermometer className="size-4 shrink-0 text-accent" aria-hidden />
+                <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+                  <DeviceIcon icon={d.icon} className="size-7 text-sm" />
                   <span className="truncate">{d.name ?? d.id}</span>
                 </span>
                 <OnlineBadge online={d.online} />

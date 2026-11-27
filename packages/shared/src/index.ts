@@ -68,6 +68,8 @@ export const BUCKET_INTERVAL: Record<Bucket, string> = {
 export interface DeviceDto {
   id: string;
   name: string | null;
+  /** Emoji escolhido para representar o sensor; null usa o ícone padrão. */
+  icon: string | null;
   online: boolean;
   lastSeenAt: string | null;
   lastTempC: number | null;
@@ -137,7 +139,11 @@ export const claimDeviceInputSchema = z.object({
 export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
 
 /** Nome vazio limpa o nome (o sensor volta a aparecer pelo ID). */
-export const updateDeviceInputSchema = z.object({ name: z.string().trim().max(80) });
+export const updateDeviceInputSchema = z.object({
+  name: z.string().trim().max(80),
+  /** Um único emoji; vazio/null remove o ícone; ausente mantém o atual. */
+  icon: z.string().trim().max(16).nullable().optional(),
+});
 export type UpdateDeviceInput = z.infer<typeof updateDeviceInputSchema>;
 
 export const updateTeamInputSchema = z.object({ name: z.string().trim().min(1).max(80) });

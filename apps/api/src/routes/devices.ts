@@ -36,6 +36,7 @@ export async function deviceRoutes(app: FastifyInstance) {
         return {
           id: d.id,
           name: d.name,
+          icon: d.icon,
           online: d.online,
           lastSeenAt: d.lastSeenAt?.toISOString() ?? null,
           lastTempC: last?.tempC ?? null,

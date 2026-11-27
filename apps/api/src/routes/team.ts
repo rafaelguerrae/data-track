@@ -149,9 +149,12 @@ export async function teamRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(devices)
-        .set({ name: req.body.name || null })
+        .set({
+          name: req.body.name || null,
+          ...(req.body.icon !== undefined && { icon: req.body.icon || null }),
+        })
         .where(and(eq(devices.id, req.params.id), eq(devices.teamId, req.auth!.teamId)))
-        .returning({ id: devices.id, name: devices.name });
+        .returning({ id: devices.id, name: devices.name, icon: devices.icon });
       return row ?? reply.code(404).send({ error: "not found" });
     },
   );

@@ -121,7 +121,7 @@ export const useRemoveMember = () => useInvalidating((id: string) => api.removeM
 export const useClaimDevice = () =>
   useInvalidating((v: { deviceId: string; name?: string }) => api.claimDevice(v.deviceId, v.name), [keys.devices]);
 export const useUpdateDevice = () =>
-  useInvalidating((v: { id: string; name: string }) => api.updateDevice(v.id, v.name), [keys.devices]);
+  useInvalidating((v: { id: string; name: string; icon: string | null }) => api.updateDevice(v.id, v.name, v.icon), [keys.devices]);
 export const useUnclaimDevice = () =>
   useInvalidating((id: string) => api.unclaimDevice(id), [keys.devices, keys.rules, keys.alerts]);
 
