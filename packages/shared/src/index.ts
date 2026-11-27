@@ -80,6 +80,32 @@ export interface SeriesPoint {
   min: number;
   max: number;
 }
+/** Números do período de um sensor (GET /devices/:id/stats). */
+export interface DeviceStatsDto {
+  count: number;
+  min: number | null;
+  max: number | null;
+  avg: number | null;
+  /** % das leituras entre low e high; null se nenhum limite foi informado ou não há leituras. */
+  inRangePct: number | null;
+  /** % dos minutos com ao menos uma leitura, desde a primeira leitura do sensor. Aproximação de disponibilidade. */
+  coveragePct: number | null;
+  alerts: number;
+  faults: number;
+  lastFault: { time: string; code: string } | null;
+}
+/** Média por hora do dia (0-23) em cada dia, para o heatmap. `day` é YYYY-MM-DD no fuso pedido. */
+export interface HourlyCell {
+  day: string;
+  hour: number;
+  avg: number;
+}
+/** Médias recentes (últimas 24h) para o mini gráfico do card. */
+export interface SparklineDto {
+  deviceId: string;
+  points: number[];
+}
+
 export interface AlertRuleDto extends AlertRuleInput {
   id: number;
   lastTriggeredAt: string | null;

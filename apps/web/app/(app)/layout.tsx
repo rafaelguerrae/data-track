@@ -40,7 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-line bg-surface/90 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-2 sm:py-3">
           <Link href="/dashboard" aria-label="Data Track"><Brand height={52} /></Link>
           <nav aria-label="Principal" className="hidden gap-1 sm:flex">
@@ -52,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={n.href}
                   href={n.href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition ${active ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}
+                  className={`inline-flex items-center gap-2 border-b-2 px-3 py-1.5 text-sm font-medium whitespace-nowrap transition ${active ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
                 >
                   <span className="relative">
                     <n.icon className="size-4" aria-hidden />
@@ -92,7 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Principal"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="mx-auto flex max-w-md">
           {NAV.map((n) => {
@@ -103,9 +103,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   href={n.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-col items-center gap-1 px-2 pt-2.5 pb-2 text-xs font-medium transition ${active ? "text-accent" : "text-muted"}`}
+                  className={`flex flex-col items-center gap-1 px-2 pt-2.5 pb-2 text-xs font-medium transition ${active ? "text-ink" : "text-muted"}`}
                 >
-                  <span className={`grid h-7 w-14 place-items-center rounded-full transition ${active ? "bg-accent-soft" : ""}`}>
+                  <span className={`grid h-7 w-14 place-items-center border-t-2 transition ${active ? "border-accent" : "border-transparent"}`}>
                     <span className="relative">
                       <n.icon className="size-5" aria-hidden />
                       {dot && <UnreadDot />}

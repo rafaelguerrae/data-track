@@ -7,6 +7,8 @@ import type {
   AlertRuleUpdate,
   Bucket,
   DeviceDto,
+  DeviceStatsDto,
+  HourlyCell,
   InviteDto,
   InviteInput,
   InvitePreviewDto,
@@ -14,6 +16,7 @@ import type {
   ResetPasswordInput,
   ResetRequestInput,
   SeriesPoint,
+  SparklineDto,
   TeamDto,
   TeamDetailDto,
   TwoFactorInput,
@@ -98,17 +101,29 @@ export const api = {
   devices: () => req<DeviceDto[]>("/devices"),
   readings: (id: string, from: Date, bucket: Bucket) =>
     req<SeriesPoint[]>(`/devices/${encodeURIComponent(id)}/readings?from=${from.toISOString()}&bucket=${bucket}`),
+  sparklines: () => req<SparklineDto[]>("/devices/sparklines"),
+  deviceStats: (id: string, from: Date, range: { low?: number; high?: number }) => {
+    const q = new URLSearchParams({ from: from.toISOString() });
+    if (range.low != null) q.set("low", String(range.low));
+    if (range.high != null) q.set("high", String(range.high));
+    return req<DeviceStatsDto>(`/devices/${encodeURIComponent(id)}/stats?${q}`);
+  },
+  hourly: (id: string, from: Date) =>
+    req<HourlyCell[]>(
+      `/devices/${encodeURIComponent(id)}/hourly?from=${from.toISOString()}&tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`,
+    ),
   rules: () => req<AlertRuleDto[]>("/alert-rules"),
   createRule: (body: AlertRuleInput) => req<AlertRuleDto>("/alert-rules", json("POST", body)),
   updateRule: (id: number, patch: AlertRuleUpdate) => req<AlertRuleDto>(`/alert-rules/${id}`, json("PATCH", patch)),
   testRule: (id: number) => req<{ ok: true }>(`/alert-rules/${id}/test`, json("POST")),
   deleteRule: (id: number) => req<void>(`/alert-rules/${id}`, json("DELETE")),
-  alerts: (f: { deviceId?: string; kind?: AlertKind; before?: number; after?: number; limit?: number } = {}) => {
+  alerts: (f: { deviceId?: string; kind?: AlertKind; before?: number; after?: number; from?: Date; to?: Date; limit?: number } = {}) => {
     const q = new URLSearchParams();
     if (f.deviceId) q.set("deviceId", f.deviceId);
     if (f.kind) q.set("kind", f.kind);
     if (f.before) q.set("before", String(f.before));
     if (f.after != null) q.set("after", String(f.after));
+    if (f.from) q.set("from", f.from.toISOString());
     if (f.limit) q.set("limit", String(f.limit));
     return req<AlertEventDto[]>(`/alerts${q.size ? `?${q}` : ""}`);
   },

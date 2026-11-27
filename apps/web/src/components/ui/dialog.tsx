@@ -38,7 +38,7 @@ export function Dialog({
       onClose={onClose}
       // Clique no fundo (o próprio <dialog>, fora do conteúdo) fecha.
       onClick={(e) => e.target === ref.current && onClose()}
-      className="m-auto w-[calc(100vw-2rem)] max-w-md rounded-xl border border-line bg-surface p-0 text-ink shadow-xl backdrop:bg-ink/40"
+      className="m-auto w-[calc(100vw-2rem)] max-w-md rounded-xl border border-line bg-surface p-0 text-ink shadow-lg backdrop:bg-ink/50"
     >
       {open && (
         <div className="max-h-[calc(100dvh-2rem)] space-y-4 overflow-y-auto p-5">

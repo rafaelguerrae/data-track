@@ -3,23 +3,23 @@
 /* Tokens de tema. Só tema claro. */
 :root {
   color-scheme: light;
-  --bg: #f4f7fa;
-  --surface: #ffffff;
-  --surface-2: #e9eff5;
-  --line: #d5dfe8;
-  --ink: #0b2338;
-  --muted: #51667b;
-  --accent: #0e8a45;
+  --bg: #f5f3ee;
+  --surface: #fdfcf9;
+  --surface-2: #ebe8e0;
+  --line: #d8d4c8;
+  --ink: #1c1b17;
+  --muted: #686458;
+  --accent: #1d6b48;
   --accent-ink: #ffffff;
-  --accent-soft: #d9f2e3;
+  --accent-soft: #e0ece4;
   --ok: #15803d;
   --ok-soft: #dcf5e5;
   --warn: #a15c07;
   --warn-soft: #fdecc8;
   --danger: #b42318;
   --danger-soft: #fde4e1;
-  --chart-avg: #0b6cb5;
-  --chart-range: #13a350;
+  --chart-avg: #1c1b17;
+  --chart-range: #1d6b48;
 }
 
 @theme inline {
@@ -38,8 +38,11 @@
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Raios curtos: aparência de instrumento, não de cartão arredondado. */
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 body {
@@ -47,6 +50,7 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
 :focus-visible {

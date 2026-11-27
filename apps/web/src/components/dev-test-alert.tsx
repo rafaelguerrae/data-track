@@ -13,7 +13,7 @@ export function DevTestAlert() {
       className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-line px-2.5 py-1.5 text-xs font-medium text-muted transition hover:text-ink"
     >
       <FlaskConical className="size-3.5" aria-hidden />
-      Testar alerta
+      <span className="hidden sm:inline">Testar alerta</span>
     </button>
   );
 }

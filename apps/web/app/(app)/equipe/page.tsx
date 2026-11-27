@@ -70,16 +70,18 @@ export default function TeamPage() {
           {devices.data?.length === 0 && <p className="p-4 text-sm text-muted">Nenhum sensor vinculado.</p>}
           {devices.data?.map((d) => (
             <div key={d.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <DeviceIcon icon={d.icon} />
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-sm font-medium">{d.name ?? d.id}</span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="truncate text-sm font-medium">{d.name ?? d.id}</span>
+                    <OnlineBadge online={d.online} />
+                  </div>
                   <span className="font-mono text-xs text-muted">{d.id}</span>
-                  <OnlineBadge online={d.online} />
                 </div>
               </div>
               {isAdmin && (
-                <div className="flex gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
                   <Button variant="secondary" className="px-3 py-1.5" onClick={() => setEditing(d)}>
                     <Pencil className="size-4" aria-hidden />
                     Editar
@@ -121,11 +123,11 @@ export default function TeamPage() {
             const self = m.id === me.id;
             return (
               <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar name={m.name} />
-                  <div>
-                    <div className="text-sm font-medium">{m.name} {self && <span className="text-muted">(você)</span>}</div>
-                    <div className="text-xs text-muted">{m.email}</div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{m.name} {self && <span className="text-muted">(você)</span>}</div>
+                    <div className="truncate text-xs text-muted">{m.email}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
