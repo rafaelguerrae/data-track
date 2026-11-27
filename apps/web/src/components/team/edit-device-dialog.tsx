@@ -1,6 +1,7 @@
 "use client";
 import type { DeviceDto } from "@data-track/shared";
 import { useState } from "react";
+import { EmojiPicker } from "#components/team/emoji-picker";
 import { Button } from "#components/ui/button";
 import { Dialog } from "#components/ui/dialog";
 import { Field, inputClass } from "#components/ui/field";
@@ -19,6 +20,7 @@ export function EditDeviceDialog({ device, onClose }: { device: DeviceDto | null
 function EditForm({ device, onDone }: { device: DeviceDto; onDone: () => void }) {
   const update = useUpdateDevice();
   const [name, setName] = useState(device.name ?? "");
+  const [icon, setIcon] = useState<string | null>(device.icon);
   const error = update.error ? errorMessage(update.error, { 404: "Este sensor não pertence mais à equipe." }) : null;
 
   return (
@@ -26,7 +28,7 @@ function EditForm({ device, onDone }: { device: DeviceDto; onDone: () => void })
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        update.mutate({ id: device.id, name }, { onSuccess: onDone });
+        update.mutate({ id: device.id, name, icon }, { onSuccess: onDone });
       }}
     >
       <Field label="ID">
@@ -34,6 +36,9 @@ function EditForm({ device, onDone }: { device: DeviceDto; onDone: () => void })
       </Field>
       <Field label="Nome">
         <input className={inputClass} data-autofocus maxLength={80} placeholder="Sem nome (aparece pelo ID)" value={name} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field label="Ícone">
+        <EmojiPicker value={icon} onChange={setIcon} />
       </Field>
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <Button className="w-full" disabled={update.isPending}>

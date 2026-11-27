@@ -7,7 +7,7 @@ import {
   type AlertKind,
   type AlertRuleDto,
 } from "@data-track/shared";
-import { and, desc, eq, gt, lt, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, gte, lt, lte, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -132,6 +132,8 @@ export async function alertRoutes(app: FastifyInstance) {
           kind: alertKindSchema.optional(),
           before: z.coerce.number().int().optional(),
           after: z.coerce.number().int().optional(),
+          from: z.coerce.date().optional(),
+          to: z.coerce.date().optional(),
           limit: z.coerce.number().int().min(1).max(100).default(ALERT_PAGE_SIZE),
         }),
       },
@@ -143,6 +145,8 @@ export async function alertRoutes(app: FastifyInstance) {
       if (q.kind) filters.push(eq(alertEvents.kind, q.kind));
       if (q.before) filters.push(lt(alertEvents.id, q.before));
       if (q.after != null) filters.push(gt(alertEvents.id, q.after));
+      if (q.from) filters.push(gte(alertEvents.createdAt, q.from));
+      if (q.to) filters.push(lte(alertEvents.createdAt, q.to));
       const rows = await db
         .select({ e: alertEvents })
         .from(alertEvents)

@@ -70,6 +70,7 @@ export const devices = pgTable("devices", {
   // null = ainda não reivindicado por nenhuma equipe.
   teamId: uuid("team_id").references(() => teams.id, { onDelete: "set null" }),
   name: text("name"),
+  icon: text("icon"),
   online: boolean("online").notNull().default(false),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
 });

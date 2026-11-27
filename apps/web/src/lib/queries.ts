@@ -29,6 +29,41 @@ export const useReadings = (deviceId: string | null, range: { label: string; hou
     placeholderData: keepPreviousData,
   });
 
+export const useSparklines = () =>
+  useQuery({ queryKey: ["sparklines"], queryFn: api.sparklines, refetchInterval: 60_000 });
+
+export const useDeviceStats = (
+  deviceId: string | null,
+  range: { label: string; hours: number },
+  limits: { low?: number; high?: number },
+) =>
+  useQuery({
+    queryKey: ["stats", deviceId, range.label, limits.low, limits.high],
+    queryFn: () => api.deviceStats(deviceId!, new Date(Date.now() - range.hours * 3600_000), limits),
+    enabled: deviceId != null,
+    refetchInterval: POLL_MS * 3,
+    placeholderData: keepPreviousData,
+  });
+
+/** Alertas disparados na janela do gráfico, para marcar no eixo do tempo. */
+export const useAlertMarkers = (deviceId: string | null, range: { label: string; hours: number }) =>
+  useQuery({
+    queryKey: ["alert-markers", deviceId, range.label],
+    queryFn: () => api.alerts({ deviceId: deviceId!, from: new Date(Date.now() - range.hours * 3600_000), limit: 100 }),
+    enabled: deviceId != null,
+    refetchInterval: 15_000,
+    placeholderData: keepPreviousData,
+  });
+
+/** Heatmap: sempre os últimos 7 dias, independente do intervalo escolhido no gráfico. */
+export const useHourly = (deviceId: string | null) =>
+  useQuery({
+    queryKey: ["hourly", deviceId],
+    queryFn: () => api.hourly(deviceId!, new Date(Date.now() - 7 * 86_400_000)),
+    enabled: deviceId != null,
+    refetchInterval: 60_000,
+  });
+
 export const useRules = () => useQuery({ queryKey: keys.rules, queryFn: api.rules, refetchInterval: POLL_MS });
 export interface AlertFilters {
   deviceId?: string;
@@ -121,7 +156,7 @@ export const useRemoveMember = () => useInvalidating((id: string) => api.removeM
 export const useClaimDevice = () =>
   useInvalidating((v: { deviceId: string; name?: string }) => api.claimDevice(v.deviceId, v.name), [keys.devices]);
 export const useUpdateDevice = () =>
-  useInvalidating((v: { id: string; name: string }) => api.updateDevice(v.id, v.name), [keys.devices]);
+  useInvalidating((v: { id: string; name: string; icon: string | null }) => api.updateDevice(v.id, v.name, v.icon), [keys.devices]);
 export const useUnclaimDevice = () =>
   useInvalidating((id: string) => api.unclaimDevice(id), [keys.devices, keys.rules, keys.alerts]);
 

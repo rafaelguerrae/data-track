@@ -68,6 +68,8 @@ export const BUCKET_INTERVAL: Record<Bucket, string> = {
 export interface DeviceDto {
   id: string;
   name: string | null;
+  /** Emoji escolhido para representar o sensor; null usa o ícone padrão. */
+  icon: string | null;
   online: boolean;
   lastSeenAt: string | null;
   lastTempC: number | null;
@@ -78,6 +80,32 @@ export interface SeriesPoint {
   min: number;
   max: number;
 }
+/** Números do período de um sensor (GET /devices/:id/stats). */
+export interface DeviceStatsDto {
+  count: number;
+  min: number | null;
+  max: number | null;
+  avg: number | null;
+  /** % das leituras entre low e high; null se nenhum limite foi informado ou não há leituras. */
+  inRangePct: number | null;
+  /** % dos minutos com ao menos uma leitura, desde a primeira leitura do sensor. Aproximação de disponibilidade. */
+  coveragePct: number | null;
+  alerts: number;
+  faults: number;
+  lastFault: { time: string; code: string } | null;
+}
+/** Média por hora do dia (0-23) em cada dia, para o heatmap. `day` é YYYY-MM-DD no fuso pedido. */
+export interface HourlyCell {
+  day: string;
+  hour: number;
+  avg: number;
+}
+/** Médias recentes (últimas 24h) para o mini gráfico do card. */
+export interface SparklineDto {
+  deviceId: string;
+  points: number[];
+}
+
 export interface AlertRuleDto extends AlertRuleInput {
   id: number;
   lastTriggeredAt: string | null;
@@ -137,7 +165,11 @@ export const claimDeviceInputSchema = z.object({
 export type ClaimDeviceInput = z.infer<typeof claimDeviceInputSchema>;
 
 /** Nome vazio limpa o nome (o sensor volta a aparecer pelo ID). */
-export const updateDeviceInputSchema = z.object({ name: z.string().trim().max(80) });
+export const updateDeviceInputSchema = z.object({
+  name: z.string().trim().max(80),
+  /** Um único emoji; vazio/null remove o ícone; ausente mantém o atual. */
+  icon: z.string().trim().max(16).nullable().optional(),
+});
 export type UpdateDeviceInput = z.infer<typeof updateDeviceInputSchema>;
 
 export const updateTeamInputSchema = z.object({ name: z.string().trim().min(1).max(80) });

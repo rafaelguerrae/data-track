@@ -16,7 +16,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center min-h-10 gap-2 rounded-lg px-4 py-2 text-sm sm:min-h-0 font-medium transition disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
     />
   );
 }

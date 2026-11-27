@@ -74,7 +74,7 @@ export default function AlertsPage() {
                     <div className="truncate text-xs text-muted">{r.email} · intervalo {r.cooldownMin} min</div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   <Button variant="secondary" className="px-3 py-1.5" onClick={() => setDialogRule(r)}>
                     <Pencil className="size-4" aria-hidden />
                     Editar
